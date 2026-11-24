@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ServiceDesk.Api/ServiceDesk.Api.csproj" />
+  </Folder>
+</Solution>

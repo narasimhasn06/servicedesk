@@ -1,0 +1,46 @@
+@baseUrl = https://localhost:7086
+
+### List customers
+GET {{baseUrl}}/api/customers
+
+### Create a customer
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{ "name": "Meera Iyer", "email": "meera@example.com", "phone": "+91 90000 00003" }
+
+### Create a lead for customer 3
+POST {{baseUrl}}/api/leads
+Content-Type: application/json
+
+{ "customerId": 3, "message": "Need help with work-life balance coaching", "source": "instagram" }
+
+### New leads only
+GET {{baseUrl}}/api/leads?status=New
+
+### Mark lead 1 as contacted
+PATCH {{baseUrl}}/api/leads/1/status
+Content-Type: application/json
+
+{ "status": "Contacted" }
+
+### Create a booking
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{ "customerId": 3, "startsAt": "2026-12-01T10:00:00Z", "amount": 3000 }
+
+### ERROR: customer that doesn't exist (expect 400)
+POST {{baseUrl}}/api/leads
+Content-Type: application/json
+
+{ "customerId": 999, "message": "test" }
+
+### ERROR: missing email (expect 400 with details)
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{ "name": "No Email" }
+
+### ERROR: unknown id (expect 404)
+GET {{baseUrl}}/api/bookings/999
