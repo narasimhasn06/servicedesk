@@ -10,7 +10,7 @@ I help **[who]** **[get what result]** by **[how]**, without **[pain]**.
 2. **Niche-first:** Automation & API developer for coaches, clinics and agencies — leads, bookings and payments that run themselves.
 3. **Trust-first:** I build automations and AI features with clear limits — what data AI sees, what it outputs, what happens when it fails.
 
-**Chosen:** _(pick one after testing it on 2 non-developers — can they say what you do and who'd hire you within 5 seconds?)_
+**Chosen:** I help small businesses stop copy-pasting: forms, CRM, database and AI connected with n8n and .NET.
 
 ## One-line offer
 
