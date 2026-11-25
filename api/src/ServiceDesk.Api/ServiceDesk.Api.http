@@ -4,62 +4,69 @@
 
 ### List customers
 GET {{baseUrl}}/api/customers
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
 
 ### Create a customer
 POST {{baseUrl}}/api/customers
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "name": "Meera Iyer", "email": "meera@example.com", "phone": "+91 90000 00003" }
 
 ### Create a lead for customer 3
 POST {{baseUrl}}/api/leads
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "customerId": 3, "message": "Need help with work-life balance coaching", "source": "instagram" }
 
 ### New leads only
 GET {{baseUrl}}/api/leads?status=New
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
 
 ### Mark lead 1 as contacted
 PATCH {{baseUrl}}/api/leads/1/status
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "status": "Contacted" }
 
 ### Create a booking
 POST {{baseUrl}}/api/bookings
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "customerId": 3, "startsAt": "2026-12-01T10:00:00Z", "amount": 3000 }
 
 ### ERROR: customer that doesn't exist (expect 400)
 POST {{baseUrl}}/api/leads
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "customerId": 999, "message": "test" }
 
 ### ERROR: missing email (expect 400 with details)
 POST {{baseUrl}}/api/customers
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "name": "No Email" }
 
 ### ERROR: unknown id (expect 404)
 GET {{baseUrl}}/api/bookings/999
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
 
 ### ERROR: duplicate email (expect 409)
 POST {{baseUrl}}/api/customers
 Content-Type: application/json
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
+
 { "name": "Priya Again", "email": "priya.1@example.com" }
 
 ### ERROR: delete a customer who has bookings (expect 409)
 DELETE {{baseUrl}}/api/customers/1
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}
 
 ### Paid and pending bookings for customer 3
 GET {{baseUrl}}/api/bookings?customerId=3
-Headers: X-Api-Key: {{apiKey}}
+X-Api-Key: {{apiKey}}

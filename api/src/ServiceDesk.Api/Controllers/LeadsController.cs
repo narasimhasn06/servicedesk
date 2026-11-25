@@ -32,7 +32,7 @@ public class LeadsController(AppDbContext db, ILogger<LeadsController> logger) :
     public async Task<ActionResult<Lead>> Create(CreateLeadRequest request)
     {
         if (!await db.Customers.AnyAsync(c => c.Id == request.CustomerId))
-        return Problem(statusCode: StatusCodes.Status409Conflict, title: "Customer not found", detail: $"Customer {request.CustomerId} does not exist.");
+        return Problem(statusCode: StatusCodes.Status404NotFound, title: "Customer not found", detail: $"Customer {request.CustomerId} does not exist.");
 
         var lead = new Lead
         {
