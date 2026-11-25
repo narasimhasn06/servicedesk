@@ -12,9 +12,8 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddOpenApi();                                  // generates /openapi/v1.json
-// builder.Services.AddSingleton<InMemoryStore>();                 // one shared store (Day 2 only)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("ServiceDesk")));  // Day 3 only
+    options.UseNpgsql(builder.Configuration.GetConnectionString("ServiceDesk")));
 
 var app = builder.Build();
 
