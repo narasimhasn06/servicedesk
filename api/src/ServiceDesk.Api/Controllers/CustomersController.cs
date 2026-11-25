@@ -27,7 +27,7 @@ public class CustomersController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<Customer>> Create(CreateCustomerRequest request)
     {
         if (await db.Customers.AnyAsync(c => c.Email == request.Email))
-            return Conflict($"A customer with email {request.Email} already exists.");
+            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Duplicate email", detail: $"A customer with email {request.Email} already exists.");
 
         var customer = new Customer { Name = request.Name, Email = request.Email, Phone = request.Phone };
         db.Customers.Add(customer);
@@ -42,7 +42,7 @@ public class CustomersController(AppDbContext db) : ControllerBase
         if (customer is null) return NotFound();
 
         if (await db.Customers.AnyAsync(c => c.Email == request.Email && c.Id != id))
-            return Conflict($"Another customer already uses {request.Email}.");
+           return Problem(statusCode: StatusCodes.Status409Conflict, title: "Duplicate email", detail: $"A customer with email {request.Email} already exists.");
 
         customer.Name = request.Name;
         customer.Email = request.Email;
@@ -60,7 +60,7 @@ public class CustomersController(AppDbContext db) : ControllerBase
         var hasHistory = await db.Leads.AnyAsync(l => l.CustomerId == id)
                       || await db.Bookings.AnyAsync(b => b.CustomerId == id);
         if (hasHistory)
-            return Conflict("This customer has leads or bookings. Delete those first.");
+            return Problem(statusCode: StatusCodes.Status409Conflict, title: "Customer has associated records", detail: "This customer has leads or bookings. Delete those first.");
 
         db.Customers.Remove(customer);
         await db.SaveChangesAsync();

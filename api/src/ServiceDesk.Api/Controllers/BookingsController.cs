@@ -32,7 +32,7 @@ public class BookingsController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<Booking>> Create(CreateBookingRequest request)
     {
         if (!await db.Customers.AnyAsync(c => c.Id == request.CustomerId))
-            return BadRequest($"Customer {request.CustomerId} does not exist.");
+        return Problem(statusCode: StatusCodes.Status409Conflict, title: "Customer not found", detail: $"Customer {request.CustomerId} does not exist.");
 
         var booking = new Booking
         {

@@ -9,7 +9,7 @@ namespace ServiceDesk.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class LeadsController(AppDbContext db) : ControllerBase
+public class LeadsController(AppDbContext db, ILogger<LeadsController> logger) : ControllerBase
 {
     // GET /api/leads?status=New
     [HttpGet]
@@ -32,7 +32,7 @@ public class LeadsController(AppDbContext db) : ControllerBase
     public async Task<ActionResult<Lead>> Create(CreateLeadRequest request)
     {
         if (!await db.Customers.AnyAsync(c => c.Id == request.CustomerId))
-            return BadRequest($"Customer {request.CustomerId} does not exist.");
+        return Problem(statusCode: StatusCodes.Status409Conflict, title: "Customer not found", detail: $"Customer {request.CustomerId} does not exist.");
 
         var lead = new Lead
         {
@@ -42,6 +42,8 @@ public class LeadsController(AppDbContext db) : ControllerBase
         };
         db.Leads.Add(lead);
         await db.SaveChangesAsync();
+        logger.LogInformation("Lead {LeadId} created for customer {CustomerId} from {Source}",
+    lead.Id, lead.CustomerId, lead.Source);
         return CreatedAtAction(nameof(GetById), new { id = lead.Id }, lead);
     }
 
