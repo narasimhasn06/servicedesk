@@ -20,6 +20,7 @@ Headers: X-Api-Key: {{apiKey}}
 
 ### New leads only
 GET {{baseUrl}}/api/leads?status=New
+Headers: X-Api-Key: {{apiKey}}
 
 ### Mark lead 1 as contacted
 PATCH {{baseUrl}}/api/leads/1/status
@@ -47,6 +48,7 @@ Headers: X-Api-Key: {{apiKey}}
 
 ### ERROR: unknown id (expect 404)
 GET {{baseUrl}}/api/bookings/999
+Headers: X-Api-Key: {{apiKey}}
 
 ### ERROR: duplicate email (expect 409)
 POST {{baseUrl}}/api/customers
@@ -56,6 +58,8 @@ Headers: X-Api-Key: {{apiKey}}
 
 ### ERROR: delete a customer who has bookings (expect 409)
 DELETE {{baseUrl}}/api/customers/1
+Headers: X-Api-Key: {{apiKey}}
 
 ### Paid and pending bookings for customer 3
 GET {{baseUrl}}/api/bookings?customerId=3
+Headers: X-Api-Key: {{apiKey}}
