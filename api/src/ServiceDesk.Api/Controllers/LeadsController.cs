@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
+using ServiceDesk.Api.Infrastructure;
 using ServiceDesk.Api.Models;
 
 namespace ServiceDesk.Api.Controllers;
@@ -12,11 +13,12 @@ public class LeadsController(AppDbContext db) : ControllerBase
 {
     // GET /api/leads?status=New
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Lead>>> GetAll([FromQuery] LeadStatus? status)
+    public async Task<ActionResult<PagedResult<Lead>>> GetAll(
+        [FromQuery] LeadStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = db.Leads.AsNoTracking();
         if (status is not null) query = query.Where(l => l.Status == status);
-        return Ok(await query.OrderByDescending(l => l.CreatedAt).ToListAsync());
+        return Ok(await query.OrderByDescending(l => l.CreatedAt).ToPagedResultAsync(page, pageSize));
     }
 
     [HttpGet("{id:int}")]

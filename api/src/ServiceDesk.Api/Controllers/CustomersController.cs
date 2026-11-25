@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
+using ServiceDesk.Api.Infrastructure;
 using ServiceDesk.Api.Models;
 
 namespace ServiceDesk.Api.Controllers;
@@ -11,8 +12,9 @@ namespace ServiceDesk.Api.Controllers;
 public class CustomersController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Customer>>> GetAll() =>
-        Ok(await db.Customers.AsNoTracking().OrderBy(c => c.Name).ToListAsync());
+    public async Task<ActionResult<PagedResult<Customer>>> GetAll(
+    [FromQuery] int page = 1, [FromQuery] int pageSize = 20) =>
+    Ok(await db.Customers.AsNoTracking().OrderBy(c => c.Name).ToPagedResultAsync(page, pageSize));
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Customer>> GetById(int id)

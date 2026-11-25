@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/ServiceDesk.Api/ServiceDesk.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ServiceDesk.Api.Tests/ServiceDesk.Api.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1,4 +1,6 @@
 @baseUrl = https://localhost:7086
+@apiKey = {{$dotenv SERVICEDESK_API_KEY}}
+
 
 ### List customers
 GET {{baseUrl}}/api/customers

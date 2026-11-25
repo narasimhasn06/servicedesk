@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
+using ServiceDesk.Api.Infrastructure;
 using ServiceDesk.Api.Models;
 
 namespace ServiceDesk.Api.Controllers;
@@ -12,11 +13,12 @@ public class BookingsController(AppDbContext db) : ControllerBase
 {
     // GET /api/bookings?customerId=2
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Booking>>> GetAll([FromQuery] int? customerId)
+    public async Task<ActionResult<PagedResult<Booking>>> GetAll(
+        [FromQuery] int? customerId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var query = db.Bookings.AsNoTracking();
         if (customerId is not null) query = query.Where(b => b.CustomerId == customerId);
-        return Ok(await query.OrderBy(b => b.StartsAt).ToListAsync());
+        return Ok(await query.OrderBy(b => b.StartsAt).ToPagedResultAsync(page, pageSize));
     }
 
     [HttpGet("{id:int}")]
@@ -31,8 +33,6 @@ public class BookingsController(AppDbContext db) : ControllerBase
     {
         if (!await db.Customers.AnyAsync(c => c.Id == request.CustomerId))
             return BadRequest($"Customer {request.CustomerId} does not exist.");
-        if (request.Amount <= 0)
-            return BadRequest("Amount must be greater than zero.");
 
         var booking = new Booking
         {
