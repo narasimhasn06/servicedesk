@@ -1,7 +1,17 @@
 # ServiceDesk — Lead-to-Payment Automation Demo
 
+[![CI](https://github.com/narasimhasn06/servicedesk/actions/workflows/ci.yml/badge.svg)](https://github.com/narasimhasn06/servicedesk/actions/workflows/ci.yml)
+
 A portfolio system for a fictional coaching business, **"Bright Path Coaching"**, built in public by
 [Narasimha Murthy SN](https://github.com/narasimhasn06) to show four freelance services working together.
+
+## Live demo
+
+- 🌐 API docs: https://servicedesk-api-tpzr.onrender.com/scalar
+- 📮 Postman / Insomnia: import `https://servicedesk-api-tpzr.onrender.com/openapi/v1.json`, then add an `X-Api-Key` header.
+- ❤️ Health: https://servicedesk-api-tpzr.onrender.com/health
+- 🔑 Endpoints require an `X-Api-Key` header — contact me for a demo key.
+- ⏳ Hosted on a free plan: the first request after 15 idle minutes can take up to a minute while the service wakes up.
 
 ## The problem
 
@@ -12,7 +22,7 @@ payments are checked manually, and the owner has no daily overview of leads, boo
 
 | Layer | Folder | Service it demonstrates | Status |
 |---|---|---|---|
-| ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | 🚧 Days 2–5 |
+| ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | ✅ Live |
 | n8n workflows: intake, CRM sync, daily report | [`/automations`](automations) | Workflow automation | ⏳ Days 6–8 |
 | SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ⏳ Days 9–10 |
 | AI lead triage with guardrails | [`/ai`](ai) | AI integration | ⏳ Days 11–12 |
@@ -33,7 +43,7 @@ flowchart LR
 
 ## Tech stack
 
-C# · ASP.NET Core (.NET 10 LTS) · Entity Framework Core · PostgreSQL · n8n · Docker ·
+C# · ASP.NET Core (.NET 10 LTS) · Entity Framework Core · PostgreSQL (Neon) · n8n · Docker (Render) · GitHub Actions ·
 Razorpay (test mode) · OpenAI / Gemini via Microsoft.Extensions.AI
 
 ## Run locally
@@ -50,11 +60,11 @@ Requirements: .NET 10 SDK, Docker Desktop.
 
 ## Case studies
 
-- [ServiceDesk API](docs/case-studies/01-servicedesk-api.md) (draft)
+- [ServiceDesk API — a documented, tested backend, live with Docker](docs/case-studies/01-servicedesk-api.md)
 
 ## Status
 
-🚧 Being built in public over 15 days (started November 2026). Live links are added as each layer ships.
+🚧 Being built in public over 15 days (started November 2026). The API layer is live; automations, SQL work and AI triage follow.
 
 ---
 
