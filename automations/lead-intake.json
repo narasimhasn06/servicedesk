@@ -1,0 +1,331 @@
+{
+  "name": "Lead Intake",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Book a free discovery call",
+        "formDescription": "Bright Path Coaching — tell us what you'd like help with and we'll reply within one business day.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone",
+              "placeholder": "+91 98765 43210"
+            },
+            {
+              "fieldLabel": "Service",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Career coaching"
+                  },
+                  {
+                    "option": "Relationship coaching"
+                  },
+                  {
+                    "option": "Work-life balance"
+                  },
+                  {
+                    "option": "Group workshop"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thanks! Check your inbox — we've sent you a confirmation"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a6e1be97-2e65-46c0-ac01-e92b89091fd3",
+      "name": "On form submission",
+      "webhookId": "dc5b44f5-494c-4da8-be59-83cf4ccffef6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6d4c333-33b0-4465-850c-ab0d56195bb4",
+              "name": "name",
+              "value": "={{ $json.Name.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "fadc8a27-de65-4ebe-8349-b6c598b64514",
+              "name": "email",
+              "value": "={{ $json.Email.trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "1cf0611d-f2ad-474c-bbeb-e177ae483ae4",
+              "name": "phone",
+              "value": "={{ $json.Phone ? $json.Phone.trim() : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "cf4da3e3-f8c0-4950-a9f3-8a01ab45119a",
+              "name": "message",
+              "value": "= {{ '[' + $json.Service + '] ' + $json.Message.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "28c24b4c-7240-4ff9-b453-5b5eaf8679be",
+              "name": "source",
+              "value": "website-form",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0de10afa-13f4-4456-8dec-348665db8c09",
+      "name": "Prepare lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "2d86bb8b-5a85-4f7c-abca-6761a40fe361",
+              "leftValue": "={{ $('On form submission').item.json.Message.trim().length }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "28b6e0ba-571d-477c-aad5-3380525813ba",
+              "leftValue": "={{ $json.name.length }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "655e5a53-1131-4577-8b3a-35e98204606d",
+      "name": "Looks valid?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Bright Path Coaching <dummyemail@exmaple.com>",
+        "toEmail": "={{ $('Prepare lead').item.json.email }}",
+        "subject": "=Thanks for reaching out, {{ $('Prepare lead').item.json.name.split(' ')[0] }}!",
+        "emailFormat": "text",
+        "text": "=Hi {{ $('Prepare lead').item.json.name.split(' ')[0] }},\n\nThanks for your interest in {{ $('On form submission').item.json.Service }}.\nWe've received your request and will reply within one business day to book your free discovery call.\n\nYour reference: #{{ $json.leadId }}\n\nWarm regards,\nBright Path Coaching\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        160
+      ],
+      "id": "0d9469c0-9b2a-456e-b98c-4d94bcce92f7",
+      "name": "Welcome email",
+      "webhookId": "afe29b27-4783-40bc-a157-ef0239c32e9f",
+      "credentials": {
+        "smtp": {
+          "id": "w6joZHMsvoonMAVZ",
+          "name": "Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://servicedesk-api-tpzr.onrender.com/health",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        688,
+        -128
+      ],
+      "id": "f59599e3-6123-448d-bda8-b5c503324099",
+      "name": "Wake up API",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": " https://servicedesk-api-tpzr.onrender.com/api/leads/intake",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $('Prepare lead').item.json.name }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $('Prepare lead').item.json.email }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Prepare lead').item.json.phone }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $('Prepare lead').item.json.message }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $('Prepare lead').item.json.source }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        -128
+      ],
+      "id": "c58ed1c8-37f1-4cbc-b293-883287854459",
+      "name": "Create lead in ServiceDesk",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Prepare lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare lead": {
+      "main": [
+        [
+          {
+            "node": "Looks valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Looks valid?": {
+      "main": [
+        [
+          {
+            "node": "Wake up API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake up API": {
+      "main": [
+        [
+          {
+            "node": "Create lead in ServiceDesk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create lead in ServiceDesk": {
+      "main": [
+        [
+          {
+            "node": "Welcome email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "81299558-3529-4fda-ac16-57e7bde490a5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"
+  },
+  "nodeGroups": [],
+  "id": "PB4YO959aZiRX6ha",
+  "tags": []
+}
