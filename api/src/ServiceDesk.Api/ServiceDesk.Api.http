@@ -70,3 +70,10 @@ X-Api-Key: {{apiKey}}
 ### Paid and pending bookings for customer 3
 GET {{baseUrl}}/api/bookings?customerId=3
 X-Api-Key: {{apiKey}}
+
+### Intake: new or existing customer + lead in one call
+POST {{baseUrl}}/api/leads/intake
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+
+{ "name": "Kiran Shetty", "email": "Kiran.Shetty@Example.com", "message": "Interested in career coaching, 4 sessions.", "source": "http-file" }

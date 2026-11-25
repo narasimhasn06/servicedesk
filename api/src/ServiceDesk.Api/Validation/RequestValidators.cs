@@ -65,3 +65,17 @@ public class UpdateBookingRequestValidator : AbstractValidator<UpdateBookingRequ
         RuleFor(x => x.PaymentStatus).IsInEnum();
     }
 }
+
+public class LeadIntakeRequestValidator : AbstractValidator<LeadIntakeRequest>
+{
+    public LeadIntakeRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
+        RuleFor(x => x.Phone)
+            .Matches(@"^\+?[0-9 \-]{7,30}$").WithMessage("Phone may contain digits, spaces, '-' and a leading '+'.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Phone));
+        RuleFor(x => x.Message).NotEmpty().MinimumLength(10).MaximumLength(2000);
+        RuleFor(x => x.Source).MaximumLength(50);
+    }
+}

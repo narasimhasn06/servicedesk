@@ -68,4 +68,46 @@ public class LeadsController(AppDbContext db, ILogger<LeadsController> logger) :
         await db.SaveChangesAsync();
         return NoContent();
     }
+
+    // POST /api/leads/intake — one call for website forms and n8n:
+    // finds the customer by email (or creates them) and records the lead, in one transaction.
+    [HttpPost("intake")]
+    public async Task<ActionResult<LeadIntakeResponse>> Intake(LeadIntakeRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+
+        var customer = await db.Customers.FirstOrDefaultAsync(c => c.Email.ToLower() == email);
+        var isNewCustomer = customer is null;
+
+        if (customer is null)
+        {
+            customer = new Customer
+            {
+                Name = request.Name.Trim(),
+                Email = email,
+                Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim()
+            };
+            db.Customers.Add(customer);
+            await db.SaveChangesAsync();          // gives the new customer an Id
+        }
+
+        var lead = new Lead
+        {
+            CustomerId = customer.Id,
+            Message = request.Message.Trim(),
+            Source = string.IsNullOrWhiteSpace(request.Source) ? "website-form" : request.Source.Trim()
+        };
+        db.Leads.Add(lead);
+        await db.SaveChangesAsync();
+
+        await transaction.CommitAsync();         // both rows saved, or neither
+
+        logger.LogInformation("Intake: lead {LeadId} for customer {CustomerId} (new customer: {IsNewCustomer}) from {Source}",
+            lead.Id, customer.Id, isNewCustomer, lead.Source);
+
+        return CreatedAtAction(nameof(GetById), new { id = lead.Id },
+            new LeadIntakeResponse(lead.Id, customer.Id, isNewCustomer));
+    }
 }
