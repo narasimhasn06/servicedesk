@@ -1,6 +1,7 @@
 # ServiceDesk API — a documented, tested backend, live with Docker
 
 **Client type:** Coaching business, 1–10 staff (demo project: "Bright Path Coaching")
+
 **Service:** .NET development
 
 ## The problem

@@ -1,6 +1,7 @@
 # [Project name] — [one-line result]
 
 **Client type:** [e.g. coaching business, 1–10 staff] (demo project)
+
 **Service:** [Workflow automation | .NET development | AI integration | Database & API work]
 
 ## The problem
