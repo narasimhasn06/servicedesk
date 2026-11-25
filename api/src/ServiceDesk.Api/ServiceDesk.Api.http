@@ -44,3 +44,15 @@ Content-Type: application/json
 
 ### ERROR: unknown id (expect 404)
 GET {{baseUrl}}/api/bookings/999
+
+### ERROR: duplicate email (expect 409)
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{ "name": "Priya Again", "email": "priya.1@example.com" }
+
+### ERROR: delete a customer who has bookings (expect 409)
+DELETE {{baseUrl}}/api/customers/1
+
+### Paid and pending bookings for customer 3
+GET {{baseUrl}}/api/bookings?customerId=3

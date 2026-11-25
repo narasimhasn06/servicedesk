@@ -13,7 +13,7 @@ public class Booking
 {
     public int Id { get; set; }
     public int CustomerId { get; set; }
-    public DateTime StartAt { get; set; }
+    public DateTime StartsAt { get; set; }
     public decimal Amount { get; set; }
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

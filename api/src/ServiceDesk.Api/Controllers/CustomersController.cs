@@ -1,60 +1,67 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Models;
 
-namespace ServiceDesk.Api.Controllers
+namespace ServiceDesk.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class CustomersController(AppDbContext db) : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class CustomersController(InMemoryStore store) : ControllerBase
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Customer>>> GetAll() =>
+        Ok(await db.Customers.AsNoTracking().OrderBy(c => c.Name).ToListAsync());
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<Customer>> GetById(int id)
     {
-        [HttpGet]
-        public ActionResult<IEnumerable<Customer>> GetAll() => Ok(store.Customers);
-        
-        [HttpGet("{id:int}")]
-        public ActionResult<Customer> GetById(int id)
-        {
-            var customer = store.Customers.FirstOrDefault(c => c.Id == id);
-            return customer is null ? NotFound() : Ok(customer);
-        }
+        var customer = await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+        return customer is null ? NotFound() : Ok(customer);
+    }
 
-        [HttpPost]
-        public ActionResult<Customer> Create(CreateCustomerRequest request)
-        {
-            var customer = new Customer
-            {
-                Id = store.NextCustomerId(),
-                Name = request.Name,
-                Email = request.Email,
-                Phone = request.Phone
-            };
-            store.Customers.Add(customer);
-            return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
-        }
+    [HttpPost]
+    public async Task<ActionResult<Customer>> Create(CreateCustomerRequest request)
+    {
+        if (await db.Customers.AnyAsync(c => c.Email == request.Email))
+            return Conflict($"A customer with email {request.Email} already exists.");
 
-        [HttpPut("{id:int}")]
-        public IActionResult Update(int id, UpdateCustomerRequest request)
-        {
-            var customer = store.Customers.FirstOrDefault(c => c.Id == id);
-            if (customer is null) return NotFound();
+        var customer = new Customer { Name = request.Name, Email = request.Email, Phone = request.Phone };
+        db.Customers.Add(customer);
+        await db.SaveChangesAsync();                 // the database assigns the Id
+        return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
+    }
 
-            customer.Name = request.Name;
-            customer.Email = request.Email;
-            customer.Phone = request.Phone;
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, UpdateCustomerRequest request)
+    {
+        var customer = await db.Customers.FindAsync(id);
+        if (customer is null) return NotFound();
 
-            return NoContent();
-        }
+        if (await db.Customers.AnyAsync(c => c.Email == request.Email && c.Id != id))
+            return Conflict($"Another customer already uses {request.Email}.");
 
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
-        {
-            var customer = store.Customers.FirstOrDefault(c => c.Id == id);
-            if (customer is null) return NotFound();
+        customer.Name = request.Name;
+        customer.Email = request.Email;
+        customer.Phone = request.Phone;
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
 
-            store.Customers.Remove(customer);
-            return NoContent();
-        }
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var customer = await db.Customers.FindAsync(id);
+        if (customer is null) return NotFound();
+
+        var hasHistory = await db.Leads.AnyAsync(l => l.CustomerId == id)
+                      || await db.Bookings.AnyAsync(b => b.CustomerId == id);
+        if (hasHistory)
+            return Conflict("This customer has leads or bookings. Delete those first.");
+
+        db.Customers.Remove(customer);
+        await db.SaveChangesAsync();
+        return NoContent();
     }
 }

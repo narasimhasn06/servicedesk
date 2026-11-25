@@ -1,68 +1,67 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Models;
 
-namespace ServiceDesk.Api.Controllers
+namespace ServiceDesk.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class LeadsController(AppDbContext db) : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class LeadsController(InMemoryStore store) : ControllerBase
+    // GET /api/leads?status=New
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Lead>>> GetAll([FromQuery] LeadStatus? status)
     {
-        // GET /api/leads?status=New
-        [HttpGet]
-        public ActionResult<IEnumerable<Lead>> GetAll([FromQuery] LeadStatus? status)
+        var query = db.Leads.AsNoTracking();
+        if (status is not null) query = query.Where(l => l.Status == status);
+        return Ok(await query.OrderByDescending(l => l.CreatedAt).ToListAsync());
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<Lead>> GetById(int id)
+    {
+        var lead = await db.Leads.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
+        return lead is null ? NotFound() : Ok(lead);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Lead>> Create(CreateLeadRequest request)
+    {
+        if (!await db.Customers.AnyAsync(c => c.Id == request.CustomerId))
+            return BadRequest($"Customer {request.CustomerId} does not exist.");
+
+        var lead = new Lead
         {
-            var leads = status is null ? store.Leads : store.Leads.Where(l => l.Status == status);
-            return Ok(leads.OrderByDescending(l => l.CreatedAt));
-        }
+            CustomerId = request.CustomerId,
+            Message = request.Message,
+            Source = request.Source ?? "website"
+        };
+        db.Leads.Add(lead);
+        await db.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = lead.Id }, lead);
+    }
 
-        [HttpGet("{id:int}")]
-        public ActionResult<Lead> GetById(int id)
-        {
-            var lead = store.Leads.FirstOrDefault(l => l.Id == id);
-            return lead is null ? NotFound() : Ok(lead);
-        }
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus(int id, UpdateLeadStatusRequest request)
+    {
+        var lead = await db.Leads.FindAsync(id);
+        if (lead is null) return NotFound();
 
-        [HttpPost]
-        public ActionResult<Lead> Create(CreateLeadRequest request)
-        {
-            if (store.Customers.All(c => c.Id != request.CustomerId))
-                return BadRequest($"Customer with ID {request.CustomerId} does not exist.");
+        lead.Status = request.Status;
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
 
-            var lead = new Lead
-            {
-                Id = store.NextLeadId(),
-                CustomerId = request.CustomerId,
-                Message = request.Message,
-                Source = request.Source ?? "website"
-            };
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var lead = await db.Leads.FindAsync(id);
+        if (lead is null) return NotFound();
 
-            store.Leads.Add(lead);
-            return CreatedAtAction(nameof(GetById), new { id = lead.Id }, lead);
-        }
-
-        // PATCH /api/leads/5/status { "status": "Contacted" }
-        [HttpPatch("{id:int}/status")]
-        public IActionResult UpdateStatus(int id, UpdateLeadStatusRequest request)
-        {
-            var lead = store.Leads.FirstOrDefault(l => l.Id == id);
-            if (lead is null) return NotFound();
-
-            lead.Status = request.Status;
-            return NoContent();
-        }
-
-        [HttpDelete("{id:int}")]
-        public IActionResult Delete(int id)
-        {
-            var lead = store.Leads.FirstOrDefault(l => l.Id == id);
-            if (lead is null) return NotFound();
-
-            store.Leads.Remove(lead);
-            return NoContent();
-        }
-
+        db.Leads.Remove(lead);
+        await db.SaveChangesAsync();
+        return NoContent();
     }
 }

@@ -38,7 +38,15 @@ Razorpay (test mode) · OpenAI / Gemini via Microsoft.Extensions.AI
 
 ## Run locally
 
-Setup instructions will be added as each layer ships. Requirements: .NET 10 SDK, Docker Desktop, Node.js LTS.
+Requirements: .NET 10 SDK, Docker Desktop.
+
+1. Copy `.env.example` to `.env` and set a password.
+2. Start PostgreSQL: `docker compose up -d`
+3. Restore tools: `dotnet tool restore`
+4. Set the connection string (same password):
+   `dotnet user-secrets set "ConnectionStrings:ServiceDesk" "Host=localhost;Port=5432;Database=servicedesk;Username=servicedesk;Password=<your-password>" --project api/src/ServiceDesk.Api`
+5. Run: `dotnet run --project api/src/ServiceDesk.Api --launch-profile https`
+6. Open `https://localhost:7086/scalar` — migrations and sample data are applied automatically in Development.
 
 ## Case studies
 

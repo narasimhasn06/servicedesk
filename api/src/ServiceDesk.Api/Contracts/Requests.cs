@@ -9,5 +9,5 @@ public record UpdateCustomerRequest(int Id, string Name, string Email, string? P
 public record CreateLeadRequest(int CustomerId, string Message, string? Source);
 public record UpdateLeadStatusRequest(LeadStatus Status);
 
-public record CreateBookingRequest(int CustomerId, DateTime StartAt, decimal Amount);
-public record UpdateBookingRequest(DateTime StartAt, decimal Amount, PaymentStatus PaymentStatus);
+public record CreateBookingRequest(int CustomerId, DateTime StartsAt, decimal Amount);
+public record UpdateBookingRequest(DateTime StartsAt, decimal Amount, PaymentStatus PaymentStatus);
