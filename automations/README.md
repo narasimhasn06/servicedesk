@@ -1,13 +1,15 @@
 # Automations (n8n)
 
-Three n8n workflows connect the website form, the ServiceDesk API, a Google Sheet "CRM", email and Telegram, so no lead is copied by hand and no failure goes unnoticed.
+Four n8n workflows connect the website form, the ServiceDesk API, a Google Sheet "CRM", email and Telegram, so no lead is copied by hand, the owner starts each day with yesterday's numbers, and no failure goes unnoticed.
+
+▶️ **90-second demo:** https://www.loom.com/share/3dd8788069004ab7909ea9e9407cc0e3 · 📄 Case study: [Automated lead handling](../docs/case-studies/02-lead-automation.md)
 
 | Workflow | File | What it does | Status |
 |---|---|---|---|
 | Lead Intake | [`lead-intake.json`](lead-intake.json) | Website form → validated lead in the API → welcome email + Telegram alert | ✅ Done |
 | CRM Sync | [`crm-sync.json`](crm-sync.json) | Every 15 min: new leads → Google Sheet (no duplicates); owner's status changes → API | ✅ Done |
-| Error Handler | [`error-handler.json`](error-handler.json) | Telegram alert when Lead Intake or CRM Sync fails | ✅ Done |
-| Daily report | — | Morning summary of leads, bookings and revenue | ⏳ Day 8 |
+| Error Handler | [`error-handler.json`](error-handler.json) | Telegram alert when any workflow fails | ✅ Done |
+| Daily Report | [`daily-report.json`](daily-report.json) | Every day 8 AM (IST): yesterday's leads, bookings and revenue → owner email + *Reports* tab | ✅ Done |
 
 ```mermaid
 flowchart LR
@@ -19,8 +21,13 @@ flowchart LR
   CRM -- new leads --> Sheet[Google Sheet CRM]
   Sheet -- status set by owner --> CRM
   CRM -- PATCH status --> API
+  Sched8[Every day 8 AM] --> DR[Daily Report]
+  DR -- GET /api/reports/daily --> API
+  DR --> Report[Report email to owner]
+  DR -- one row per day --> Sheet
   LI -. on failure .-> EH[Error Handler]
   CRM -. on failure .-> EH
+  DR -. on failure .-> EH
   EH --> TG
 ```
 
@@ -66,9 +73,33 @@ Every 15 minutes → Wake up API ─┬─ A: Get new leads → Split leads → 
 
 ![Error Handler: failed and recovered runs](error-handler.png)
 
-**Error Trigger → Alert me** (Telegram): workflow name, failing node, error message, mode and a link to the execution. Set as the *Error workflow* in the settings of Lead Intake and CRM Sync. In n8n 2.x the error workflow must be **published**, and it fires only for production runs (published workflows), not for test runs in the editor.
+**Error Trigger → Alert me** (Telegram): workflow name, failing node, error message, mode and a link to the execution. Set as the *Error workflow* in the settings of Lead Intake, CRM Sync and Daily Report. In n8n 2.x the error workflow must be **published**, and it fires only for production runs (published workflows), not for test runs in the editor.
 
 ![Telegram alerts](telegram-alerts.png)
+
+## 4. Daily Report
+
+![Daily Report workflow](daily-report.png)
+
+**Problem:** the owner had no daily view of the business; counting yesterday's leads and payments meant scrolling through the inbox and the sheet.
+
+**Result:** every morning at 8 AM (India time) an email arrives with yesterday's new leads by source, new customers, bookings (paid / total), revenue, pending payments and how many leads still wait for a first reply. The same numbers are saved as one row per day in a *Reports* tab.
+
+```
+Every day 8 AM → Wake up API → Get daily report → Build report now ─┬─ Append or update row in sheet
+                                                                    ├─ Email owner
+                                                                    └─ Telegram summary
+```
+
+- **Get daily report** calls `GET /api/reports/daily` (no date = yesterday). **The API does the counting, n8n does the delivery**: totals come from one SQL-backed, unit-tested endpoint, so the email, the sheet and any future dashboard always agree.
+- **"Yesterday" means yesterday in India**, not in UTC. The database stores UTC; the API turns an Indian calendar day into a UTC range (00:00 IST = 18:30 UTC the evening before). n8n runs with `GENERIC_TIMEZONE=Asia/Kolkata`, so 8 AM is 8 AM IST.
+- **Revenue** = bookings created that day and marked *Paid*; *Pending* = the unpaid amount of that day's bookings.
+- **Append or update row in sheet** writes to the *Reports* tab **matched on Date**, so a re-run updates the day's row instead of adding a second one.
+- **Email owner** sends an HTML table with inline styles (Gmail and Outlook strip `<style>` blocks); amounts use Indian grouping (₹1,25,000). A quiet day still sends a report: "nothing happened" is useful news.
+
+![Report email](report-email.png)
+
+![Reports tab](reports-tab.png)
 
 ## Tested scenarios
 
@@ -84,16 +115,22 @@ All tests used the production form URL and fake data.
 | 6 | Status set to *Contacted* in the sheet | ✅ API shows `"status": "Contacted"`; the row keeps its status |
 | 7 | Forced failure (wrong intake URL) | ✅ "Workflow failed: Lead Intake", node *Create lead in ServiceDesk*, 404 |
 | 8 | URL restored | ✅ Normal email + alert again |
+| 9 | Daily Report, manual run | ✅ One *Reports* row, email + Telegram summary; numbers match `GET /api/reports/daily` |
+| 10 | Daily Report run again | ✅ Still one row for that date; only *Sent At* changes |
+| 11 | Busy day (`date=2026-11-25`) | ✅ 6 leads (website: 6), 1 new customer, 6 of 10 bookings paid, ₹15,750 revenue, ₹10,500 pending |
+| 12 | Quiet day (`date=2026-11-01`) | ✅ All zeros, *Leads by Source* = `-`; the email still arrives |
+| 13 | Future date (`date=2099-01-01`) | ✅ 400 *Invalid date* |
+| 14 | Real schedule | ✅ A run appeared in *Executions* by itself at the set time; email arrived |
 
 ## Run it yourself
 
 1. Start n8n locally from the repo root: `docker compose up -d` (n8n at http://localhost:5678; set `N8N_ENCRYPTION_KEY` in `.env` first, see `.env.example`).
-2. In n8n: **Workflows → Import from file** → the three JSON files.
-3. Create the credentials (they are never included in the exports):
+2. In n8n: **Workflows → Import from file** → the four JSON files.
+3. Create the credentials (they are never included in the exports). In Daily Report, set *Email owner* → To to the owner's address.
    - **Header Auth**: name `X-Api-Key`, value = your ServiceDesk API key.
    - **SMTP**: e.g. Gmail with an app password; set your own *From* address in *Welcome email*.
-   - **Telegram API**: bot token from @BotFather. Replace `YOUR_CHAT_ID` in the three Telegram nodes with your chat ID.
-   - **Google Service Account**: a service account with the Sheets and Drive APIs enabled; share your sheet with its email as Editor. Replace `YOUR_SHEET_ID` in *Upsert to sheet* and *Read sheet*.
-4. Create the sheet: tab `Leads`, row 1 = `Lead ID | Created | Name | Email | Phone | Service | Message | Source | Status | Synced At`, with a dropdown (Contacted, Qualified, Lost) on the Status column.
+   - **Telegram API**: bot token from @BotFather. Replace `YOUR_CHAT_ID` in every Telegram node with your chat ID.
+   - **Google Service Account**: a service account with the Sheets and Drive APIs enabled; share your sheet with its email as Editor. Replace `YOUR_SHEET_ID` in *Upsert to sheet*, *Read sheet* and *Append or update row in sheet* (Daily Report).
+4. Create the sheet: tab `Leads`, row 1 = `Lead ID | Created | Name | Email | Phone | Service | Message | Source | Status | Synced At`, with a dropdown (Contacted, Qualified, Lost) on the Status column; and tab `Reports`, row 1 = `Date | New Leads | Leads by Source | New Customers | New Bookings | Paid Bookings | Revenue (INR) | Pending (INR) | Open Leads | Sent At`.
 5. If you run the API locally, change the Render URLs to your local one.
-6. **Publish** Error Handler first, then set it as the *Error workflow* in Lead Intake and CRM Sync (**⋯ → Settings**), and publish both. Open the form's **Production URL** to test.
+6. **Publish** Error Handler first, then set it as the *Error workflow* in Lead Intake, CRM Sync and Daily Report (**⋯ → Settings**), and publish them. Daily Report fires only while n8n is running at 8 AM; run it by hand for a demo. Open the form's **Production URL** to test.

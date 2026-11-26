@@ -200,7 +200,7 @@
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20",
+          "value": "YOUR_SHEET_ID",
           "mode": "id"
         },
         "sheetName": {
@@ -208,7 +208,7 @@
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
         },
         "columns": {
           "mappingMode": "autoMapInputData",
@@ -345,7 +345,7 @@
         "authentication": "serviceAccount",
         "documentId": {
           "__rl": true,
-          "value": "1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20",
+          "value": "YOUR_SHEET_ID",
           "mode": "id"
         },
         "sheetName": {
@@ -353,7 +353,7 @@
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
         },
         "options": {}
       },

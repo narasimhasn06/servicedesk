@@ -23,7 +23,7 @@ payments are checked manually, and the owner has no daily overview of leads, boo
 | Layer | Folder | Service it demonstrates | Status |
 |---|---|---|---|
 | ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | ✅ Live |
-| n8n workflows: intake, CRM sync, alerts, daily report | [`/automations`](automations) | Workflow automation | ✅ Intake, CRM sync, alerts · ⏳ Day 8 |
+| n8n workflows: intake, CRM sync, alerts, daily report | [`/automations`](automations) | Workflow automation | ✅ Intake, CRM sync, alerts, daily report |
 | SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ⏳ Days 9–10 |
 | AI lead triage with guardrails | [`/ai`](ai) | AI integration | ⏳ Days 11–12 |
 
@@ -61,10 +61,11 @@ Requirements: .NET 10 SDK, Docker Desktop.
 ## Case studies
 
 - [ServiceDesk API — a documented, tested backend, live with Docker](docs/case-studies/01-servicedesk-api.md)
+- [Automated lead handling — from form to CRM, owner alerts and a daily report, with no copy-paste](docs/case-studies/02-lead-automation.md)
 
 ## Status
 
-🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts and error handling are done; daily report, SQL work and AI triage follow.
+🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL work, the payment webhook and AI triage follow.
 
 ---
 

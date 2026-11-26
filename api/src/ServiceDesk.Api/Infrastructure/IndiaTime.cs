@@ -1,3 +1,5 @@
+namespace ServiceDesk.Api.Infrastructure;
+
 // India has one time zone and no daylight saving, so a fixed +05:30 offset is exact
 // and behaves the same on Windows, Linux and in Docker (no time-zone database needed).
 public static class IndiaTime

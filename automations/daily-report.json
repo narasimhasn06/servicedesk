@@ -1,0 +1,416 @@
+{
+  "name": "Daily Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "843472da-dc41-4c8f-8bc3-5cb8861253fb",
+      "name": "Every day 8 AM"
+    },
+    {
+      "parameters": {
+        "url": "https://servicedesk-api-tpzr.onrender.com/health",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0e03c781-5c2b-4ff8-8db2-cb43cb3b2a0d",
+      "name": "Wake up API"
+    },
+    {
+      "parameters": {
+        "url": "https://servicedesk-api-tpzr.onrender.com/api/reports/daily",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "90e91db9-ab18-445f-8299-8e19f800d447",
+      "name": "Get daily report",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b534e39c-af96-4373-b9da-e93efb810757",
+              "name": "Date",
+              "value": "={{ $json.date }}",
+              "type": "string"
+            },
+            {
+              "id": "f552d52b-1b77-4c73-8cb7-8d88143bf3c8",
+              "name": "New Leads",
+              "value": "={{ $json.newLeads }}",
+              "type": "number"
+            },
+            {
+              "id": "56d44e44-e9a7-49ee-bc52-8e9011d252db",
+              "name": "Leads by Source",
+              "value": "={{ Object.entries($json.leadsBySource).map(([s, n]) => s + ': ' + n).join(', ') || '-' }}",
+              "type": "string"
+            },
+            {
+              "id": "8b3f4969-70ae-481a-946f-ec7ff5df9953",
+              "name": "New Customers",
+              "value": "={{ $json.newCustomers }}",
+              "type": "number"
+            },
+            {
+              "id": "d14a2162-56db-4202-9097-91609064de60",
+              "name": "New Bookings",
+              "value": "={{ $json.newBookings }}",
+              "type": "number"
+            },
+            {
+              "id": "a8e2cbfc-3d1f-41f3-b22b-3920595a102f",
+              "name": "Paid Bookings",
+              "value": "={{ $json.paidBookings }}",
+              "type": "number"
+            },
+            {
+              "id": "b5daeaca-6fe7-499c-b005-2f39749cbac2",
+              "name": "Revenue (INR)",
+              "value": "={{ $json.revenue }}",
+              "type": "number"
+            },
+            {
+              "id": "b38ed5ae-863c-450d-8111-000eaeb7136e",
+              "name": "Pending (INR)",
+              "value": "={{ $json.pendingAmount }}",
+              "type": "number"
+            },
+            {
+              "id": "ac8b6e34-5193-4458-9771-5c7b621ce024",
+              "name": "Open Leads",
+              "value": "={{ $json.openLeads }}",
+              "type": "number"
+            },
+            {
+              "id": "29918b72-a63d-4999-8b7a-568747001904",
+              "name": "Sent At",
+              "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        0
+      ],
+      "id": "a20d0077-0b16-4531-aff7-3845258b0685",
+      "name": "Build report now"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 276832590,
+          "mode": "list",
+          "cachedResultName": "Reports",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Date"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "New Leads",
+              "displayName": "New Leads",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Leads by Source",
+              "displayName": "Leads by Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "New Customers",
+              "displayName": "New Customers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "New Bookings",
+              "displayName": "New Bookings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Paid Bookings",
+              "displayName": "Paid Bookings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Revenue (INR)",
+              "displayName": "Revenue (INR)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pending (INR)",
+              "displayName": "Pending (INR)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Open Leads",
+              "displayName": "Open Leads",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sent At",
+              "displayName": "Sent At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        0
+      ],
+      "id": "fa27b9e8-383e-472f-bdfc-66f5cf756a07",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "Gyz1v2L7qCpLw0Gu",
+          "name": "Google – n8n-sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "Bright Path Reports <your sender address>",
+        "toEmail": "owner@example.com",
+        "subject": "=Bright Path daily report – {{ $json['Date'] }}",
+        "html": "=<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:520px;color:#222\">\n  <h2 style=\"margin:0 0 4px\">Bright Path – daily report</h2>\n  <p style=\"margin:0 0 16px;color:#666\">{{ $json['Date'] }} (India time)</p>\n  <table style=\"border-collapse:collapse;width:100%;font-size:15px\">\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">New leads</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\"><b>{{ $json['New Leads'] }}</b></td></tr>\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">By source</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\">{{ $json['Leads by Source'] }}</td></tr>\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">New customers</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\">{{ $json['New Customers'] }}</td></tr>\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">Bookings (paid / total)</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\">{{ $json['Paid Bookings'] }} / {{ $json['New Bookings'] }}</td></tr>\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">Revenue</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\"><b>₹{{ Number($json['Revenue (INR)']).toLocaleString('en-IN') }}</b></td></tr>\n    <tr><td style=\"padding:8px;border-bottom:1px solid #eee\">Pending payments</td>\n        <td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right\">₹{{ Number($json['Pending (INR)']).toLocaleString('en-IN') }}</td></tr>\n  </table>\n  <p style=\"margin:16px 0 0\">👉 <b>{{ $json['Open Leads'] }}</b> leads are still waiting for a first reply — see the Leads tab.</p>\n  <p style=\"margin:16px 0 0;color:#999;font-size:12px\">Sent automatically at {{ $json['Sent At'] }}.</p>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        -192
+      ],
+      "id": "7eeb2136-074c-4fa9-b778-fd98365f24e6",
+      "name": "Email owner",
+      "webhookId": "97108a44-5e7f-4ed9-96f1-66fd65687ff9",
+      "credentials": {
+        "smtp": {
+          "id": "w6joZHMsvoonMAVZ",
+          "name": "Gmail SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "=Daily report {{ $json['Date'] }}\nNew leads: {{ $json['New Leads'] }} ({{ $json['Leads by Source'] }})\nBookings: {{ $json['Paid Bookings'] }} paid / {{ $json['New Bookings'] }}\nRevenue: ₹{{ Number($json['Revenue (INR)']).toLocaleString('en-IN') }}\nOpen leads: {{ $json['Open Leads'] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        208
+      ],
+      "id": "df4345e5-7822-41a6-bf3c-8c737a979081",
+      "name": "Telegram summary",
+      "webhookId": "8a125aa3-15a9-4093-ac20-da9e59330811",
+      "credentials": {
+        "telegramApi": {
+          "id": "YGKI8vFUr6DSecgp",
+          "name": "Telegram – Bright Path bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every day 8 AM": {
+      "main": [
+        [
+          {
+            "node": "Wake up API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake up API": {
+      "main": [
+        [
+          {
+            "node": "Get daily report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get daily report": {
+      "main": [
+        [
+          {
+            "node": "Build report now",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build report now": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email owner",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ypFBss5N4kTrS6cV",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9c6c4149-e643-4abb-9f88-0268f74bb539",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"
+  },
+  "nodeGroups": [],
+  "id": "ZBF9TbgtiMHkMrZ6",
+  "tags": []
+}
