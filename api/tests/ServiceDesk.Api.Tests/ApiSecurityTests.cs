@@ -44,4 +44,21 @@ public class ApiSecurityTests(TestApiFactory factory) : IClassFixture<TestApiFac
         var response = await client.PostAsJsonAsync("/api/customers", new { name = "", email = "not-an-email" });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Report_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/reports/daily");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Report_for_a_future_date_returns_400()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", TestApiFactory.ApiKey);
+        var response = await client.GetAsync("/api/reports/daily?date=2099-01-01");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
