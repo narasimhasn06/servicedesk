@@ -1,0 +1,27 @@
+﻿                                                                                       QUERY PLAN                                                                                        
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=1690.73..1769.59 rows=10 width=83) (actual time=13.803..13.850 rows=10 loops=1)
+   Buffers: shared hit=203
+   ->  Limit  (cost=1690.44..1690.47 rows=10 width=44) (actual time=13.770..13.773 rows=10 loops=1)
+         Buffers: shared hit=173
+         ->  Sort  (cost=1690.44..1713.42 rows=9190 width=44) (actual time=13.769..13.770 rows=10 loops=1)
+               Sort Key: (sum("Bookings"."Amount")) DESC, "Bookings"."CustomerId"
+               Sort Method: top-N heapsort  Memory: 26kB
+               Buffers: shared hit=173
+               ->  HashAggregate  (cost=1376.97..1491.85 rows=9190 width=44) (actual time=10.783..12.508 rows=9275 loops=1)
+                     Group Key: "Bookings"."CustomerId"
+                     Batches: 1  Memory Usage: 3985kB
+                     Buffers: shared hit=167
+                     ->  Index Only Scan using "IX_Bookings_PaymentStatus_StartsAt" on "Bookings"  (cost=0.43..1187.84 rows=25218 width=9) (actual time=0.058..2.968 rows=26577 loops=1)
+                           Index Cond: (("PaymentStatus" = 'Paid'::text) AND ("StartsAt" >= (CURRENT_DATE - 30)) AND ("StartsAt" < CURRENT_DATE))
+                           Heap Fetches: 0
+                           Buffers: shared hit=167
+   ->  Index Scan using "PK_Customers" on "Customers" c  (cost=0.29..7.90 rows=1 width=43) (actual time=0.007..0.007 rows=1 loops=10)
+         Index Cond: ("Id" = "Bookings"."CustomerId")
+         Buffers: shared hit=30
+ Planning:
+   Buffers: shared hit=266
+ Planning Time: 1.542 ms
+ Execution Time: 14.266 ms
+(23 rows)
+

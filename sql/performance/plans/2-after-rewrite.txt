@@ -1,0 +1,32 @@
+﻿                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=10782.38..10861.25 rows=10 width=83) (actual time=30.049..30.110 rows=10 loops=1)
+   Buffers: shared hit=8426
+   ->  Limit  (cost=10782.09..10782.12 rows=10 width=44) (actual time=29.997..30.000 rows=10 loops=1)
+         Buffers: shared hit=8396
+         ->  Sort  (cost=10782.09..10805.49 rows=9358 width=44) (actual time=29.995..29.997 rows=10 loops=1)
+               Sort Key: (sum("Bookings"."Amount")) DESC, "Bookings"."CustomerId"
+               Sort Method: top-N heapsort  Memory: 26kB
+               Buffers: shared hit=8396
+               ->  HashAggregate  (cost=10462.90..10579.87 rows=9358 width=44) (actual time=26.373..28.507 rows=9275 loops=1)
+                     Group Key: "Bookings"."CustomerId"
+                     Batches: 1  Memory Usage: 3985kB
+                     Buffers: shared hit=8390
+                     ->  Bitmap Heap Scan on "Bookings"  (cost=970.16..10261.71 rows=26825 width=9) (actual time=4.182..17.573 rows=26577 loops=1)
+                           Recheck Cond: (("StartsAt" >= (CURRENT_DATE - 30)) AND ("StartsAt" < CURRENT_DATE))
+                           Filter: (("PaymentStatus")::text = 'Paid'::text)
+                           Rows Removed by Filter: 11334
+                           Heap Blocks: exact=8257
+                           Buffers: shared hit=8390
+                           ->  Bitmap Index Scan on "IX_Bookings_StartsAt"  (cost=0.00..963.45 rows=38302 width=0) (actual time=3.043..3.044 rows=37911 loops=1)
+                                 Index Cond: (("StartsAt" >= (CURRENT_DATE - 30)) AND ("StartsAt" < CURRENT_DATE))
+                                 Buffers: shared hit=133
+   ->  Index Scan using "PK_Customers" on "Customers" c  (cost=0.29..7.90 rows=1 width=43) (actual time=0.010..0.010 rows=1 loops=10)
+         Index Cond: ("Id" = "Bookings"."CustomerId")
+         Buffers: shared hit=30
+ Planning:
+   Buffers: shared hit=242
+ Planning Time: 1.443 ms
+ Execution Time: 30.747 ms
+(28 rows)
+

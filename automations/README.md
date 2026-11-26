@@ -56,11 +56,11 @@ flowchart LR
 **Result:** the sheet fills itself every 15 minutes, and a status the owner picks in the sheet (Contacted / Qualified / Lost) reaches the API automatically.
 
 ```
-Every 15 minutes → Wake up API ─┬─ A: Get new leads → Split leads → Get customer → Build row → Upsert to sheet
+Every 15 minutes → Wake up API ─┬─ A: Get new leads (with customer) → Split leads → Build row → Upsert to sheet
                                 └─ B: Read sheet → Filter (Status not empty) → Update status in API
 ```
 
-- **Branch A** gets `GET /api/leads?status=New&pageSize=100`, adds each lead's customer (`GET /api/customers/{id}`), builds a row (Lead ID, Created in IST, Name, Email, Phone, Service, Message, Source, Synced At) and **appends or updates** it in the sheet, **matched on Lead ID**, so re-runs never duplicate rows. Values are written raw, so phone numbers like `+91 …` aren't read as formulas.
+- **Branch A** gets `GET /api/leads/with-customer?status=New&pageSize=100`: every open lead **with** its customer's name, email and phone in **one** API call (one SQL JOIN). Until Day 9 it called `GET /api/customers/{id}` once per lead, a classic N+1 ([details](../sql/README.md#also-fixed-an-n1-in-the-crm-sync)). It builds a row (Lead ID, Created in IST, Name, Email, Phone, Service, Message, Source, Synced At) and **appends or updates** it in the sheet, **matched on Lead ID**, so re-runs never duplicate rows. Values are written raw, so phone numbers like `+91 …` aren't read as formulas.
 - **Branch B** reads the sheet and, for every row with a Status, calls `PATCH /api/leads/{id}/status`.
 - **Design rule:** branch A never writes the Status column. The owner owns it; n8n only passes it on. So the two branches can't overwrite each other, whichever runs first. A blank Status means *New*.
 - Every API call has 5 retries; Google access uses a **service account** shared on the sheet (no personal login, no 7-day token expiry).

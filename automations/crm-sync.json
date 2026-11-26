@@ -48,7 +48,7 @@
     },
     {
       "parameters": {
-        "url": "https://servicedesk-api-tpzr.onrender.com/api/leads",
+        "url": "https://servicedesk-api-tpzr.onrender.com/api/leads/with-customer",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -100,31 +100,6 @@
     },
     {
       "parameters": {
-        "url": "=https://servicedesk-api-tpzr.onrender.com/api/customers/{{ $json.customerId }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        864,
-        0
-      ],
-      "id": "fe3ca5f2-403d-4eff-9b12-e3a01cd8d43e",
-      "name": "Get customer",
-      "retryOnFail": true,
-      "maxTries": 5,
-      "waitBetweenTries": 5000,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "k25trGEQp07u1caZ",
-          "name": "ServiceDesk API (production)"
-        }
-      }
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -142,19 +117,19 @@
             {
               "id": "31d74528-7e84-44dd-b423-545753ea460d",
               "name": "Name",
-              "value": "={{ $json.name }}",
+              "value": "={{ $json.customerName }}",
               "type": "string"
             },
             {
               "id": "6eb8c8e6-1fb0-42ee-b4b3-abaa79949cf5",
               "name": "Email",
-              "value": "={{ $json.email }}",
+              "value": "={{ $json.customerEmail }}",
               "type": "string"
             },
             {
               "id": "37f6a149-a324-45e4-857d-b3eddbc89549",
               "name": "Phone",
-              "value": "={{ $json.phone ?? '' }}",
+              "value": "={{ $json.customerPhone ?? '' }}",
               "type": "string"
             },
             {
@@ -486,17 +461,6 @@
       "main": [
         [
           {
-            "node": "Get customer",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get customer": {
-      "main": [
-        [
-          {
             "node": "Build row",
             "type": "main",
             "index": 0
@@ -547,7 +511,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "dd97cd85-155b-461f-ad32-336f0bdeafa5",
+  "versionId": "ce194461-ddde-46c3-8fbb-fea60d7794d6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"
