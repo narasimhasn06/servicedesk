@@ -1,0 +1,558 @@
+{
+  "name": "CRM Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "61d6bf70-18f6-40f1-a85f-1feb837b17bf",
+      "name": "Every 15 minutes"
+    },
+    {
+      "parameters": {
+        "url": "https://servicedesk-api-tpzr.onrender.com/health",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        0
+      ],
+      "id": "676b6805-9b89-4147-9b05-6215fa0c9afb",
+      "name": "Wake up API",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://servicedesk-api-tpzr.onrender.com/api/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "New"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e9c6b6f2-6df6-43ab-af08-5c3683e06e36",
+      "name": "Get new leads",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        0
+      ],
+      "id": "9c05c8f5-5ed8-4e0a-a9c0-117addd01acc",
+      "name": "Split leads"
+    },
+    {
+      "parameters": {
+        "url": "=https://servicedesk-api-tpzr.onrender.com/api/customers/{{ $json.customerId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        864,
+        0
+      ],
+      "id": "fe3ca5f2-403d-4eff-9b12-e3a01cd8d43e",
+      "name": "Get customer",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "16729a58-3988-44be-a54e-6db7e4ae97cd",
+              "name": "Lead ID",
+              "value": "={{ $('Split leads').item.json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "be455486-d1cc-459a-886e-7f2a13e6eb48",
+              "name": "Created",
+              "value": "={{ DateTime.fromISO($('Split leads').item.json.createdAt, { zone: 'utc' }).setZone('Asia/Kolkata').toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            },
+            {
+              "id": "31d74528-7e84-44dd-b423-545753ea460d",
+              "name": "Name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "6eb8c8e6-1fb0-42ee-b4b3-abaa79949cf5",
+              "name": "Email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "37f6a149-a324-45e4-857d-b3eddbc89549",
+              "name": "Phone",
+              "value": "={{ $json.phone ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "480898dc-f529-499b-a5d3-c2d2cca5441a",
+              "name": "Service",
+              "value": "={{ ($('Split leads').item.json.message.match(/^\\[(.+?)\\]/) || [])[1] ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1dc1a47-ebe9-41e5-a772-3d79c0d5563b",
+              "name": "Message",
+              "value": "={{ $('Split leads').item.json.message.replace(/^\\[.+?\\]\\s*/, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "a91f73d9-2755-40c9-ba85-1e89eb7e758d",
+              "name": "Source",
+              "value": "={{ $('Split leads').item.json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "6055b50a-70d0-43a2-bcef-c818f8e87cca",
+              "name": "Synced At",
+              "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "b7a9e924-f9a3-41b3-b4af-fb0e2b9ed527",
+      "name": "Build row"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Lead ID"
+          ],
+          "schema": [
+            {
+              "id": "Lead ID",
+              "displayName": "Lead ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created",
+              "displayName": "Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Synced At",
+              "displayName": "Synced At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "313e3bcc-a28d-4f26-b2fa-ec69b3f9177c",
+      "name": "Upsert to sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "Gyz1v2L7qCpLw0Gu",
+          "name": "Google – n8n-sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nl95BSfnW2bOy9fkWNv991ZK_XPerH4jASlPzD_B-20/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        368,
+        272
+      ],
+      "id": "8a4524f4-bb7e-4f90-a6ac-61ab572c9dd0",
+      "name": "Read sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "Gyz1v2L7qCpLw0Gu",
+          "name": "Google – n8n-sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "39877176-d044-46a9-a2b9-343375c8ee58",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        592,
+        272
+      ],
+      "id": "d58ba4e5-6955-4189-85c6-fb3db69aa75a",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://servicedesk-api-tpzr.onrender.com/api/leads/{{ $json['Lead ID'] }}/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=status",
+              "value": "={{ $json.Status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        816,
+        272
+      ],
+      "id": "4a3e71c9-252a-4465-a45f-a713b63f54b1",
+      "name": "Update status in API",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Wake up API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake up API": {
+      "main": [
+        [
+          {
+            "node": "Get new leads",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get new leads": {
+      "main": [
+        [
+          {
+            "node": "Split leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split leads": {
+      "main": [
+        [
+          {
+            "node": "Get customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get customer": {
+      "main": [
+        [
+          {
+            "node": "Build row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build row": {
+      "main": [
+        [
+          {
+            "node": "Upsert to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Update status in API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "ypFBss5N4kTrS6cV",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "dd97cd85-155b-461f-ad32-336f0bdeafa5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"
+  },
+  "nodeGroups": [],
+  "id": "I0KMP5x78blvxxP0",
+  "tags": []
+}

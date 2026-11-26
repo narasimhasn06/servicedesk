@@ -1,45 +1,99 @@
 # Automations (n8n)
 
-Workflows that connect the website form, the ServiceDesk API and email, so no lead is copied by hand.
+Three n8n workflows connect the website form, the ServiceDesk API, a Google Sheet "CRM", email and Telegram, so no lead is copied by hand and no failure goes unnoticed.
 
 | Workflow | File | What it does | Status |
 |---|---|---|---|
-| Lead Intake | [`lead-intake.json`](lead-intake.json) | Website form → validated lead in the API → instant welcome email | ✅ Done |
-| CRM sync + alerts | — | Leads to Google Sheets, Telegram alert, error workflow | ⏳ Day 7 |
+| Lead Intake | [`lead-intake.json`](lead-intake.json) | Website form → validated lead in the API → welcome email + Telegram alert | ✅ Done |
+| CRM Sync | [`crm-sync.json`](crm-sync.json) | Every 15 min: new leads → Google Sheet (no duplicates); owner's status changes → API | ✅ Done |
+| Error Handler | [`error-handler.json`](error-handler.json) | Telegram alert when Lead Intake or CRM Sync fails | ✅ Done |
 | Daily report | — | Morning summary of leads, bookings and revenue | ⏳ Day 8 |
 
-## Lead Intake
+```mermaid
+flowchart LR
+  Form[Website form] --> LI[Lead Intake]
+  LI --> API[ServiceDesk API]
+  LI --> Mail[Welcome email]
+  LI --> TG[Telegram alert]
+  Sched[Every 15 min] --> CRM[CRM Sync]
+  CRM -- new leads --> Sheet[Google Sheet CRM]
+  Sheet -- status set by owner --> CRM
+  CRM -- PATCH status --> API
+  LI -. on failure .-> EH[Error Handler]
+  CRM -. on failure .-> EH
+  EH --> TG
+```
+
+## 1. Lead Intake
 
 ![Lead Intake workflow](lead-intake.png)
 
 **Problem:** enquiries from the website sat in an inbox until someone copied them into a spreadsheet, and replies took hours.
 
-**Result:** every submission is cleaned, checked, saved as a lead (and customer) through the API, and answered by email within seconds.
-
-### Flow
+**Result:** every submission is cleaned, checked, saved as a lead (and customer) through the API, answered by email and announced to the owner on Telegram within seconds.
 
 1. **On form submission** (Form Trigger): "Book a free discovery call" form with Name, Email, Phone, Service and Message.
 2. **Prepare lead** (Edit Fields): trims values, lower-cases the email, prefixes the message with the chosen service, sets `source = website-form`.
-3. **Looks valid?** (If): message at least 10 characters and name at least 2; invalid submissions stop here and never reach the API.
+3. **Looks valid?** (If): message at least 10 characters and name at least 2.
+   - **false → Alert rejected** (Telegram): "Rejected form submission (not saved)". Nothing reaches the API.
 4. **Wake up API** (HTTP GET `/health`): wakes the free-plan Render service (cold start up to ~1 minute); 60 s timeout, 5 retries, continues on error.
 5. **Create lead in ServiceDesk** (HTTP POST `/api/leads/intake`, `X-Api-Key` header auth): finds or creates the customer by email and creates the lead in one transaction; 5 retries. Returns `leadId`, `customerId`, `isNewCustomer`.
-6. **Welcome email** (SMTP): personalised reply with the lead reference number.
+6. **Welcome email** (SMTP) and **Alert owner** (Telegram, "New lead #… (new / returning customer)") run side by side. Telegram nodes continue on error, so a chat hiccup never fails a saved lead.
 
-### Run it yourself
+## 2. CRM Sync
+
+![CRM Sync workflow](crm-sync.png)
+
+**Problem:** the owner works from a spreadsheet, but the database is the source of truth. Copying between them by hand creates duplicates and stale statuses.
+
+**Result:** the sheet fills itself every 15 minutes, and a status the owner picks in the sheet (Contacted / Qualified / Lost) reaches the API automatically.
+
+```
+Every 15 minutes → Wake up API ─┬─ A: Get new leads → Split leads → Get customer → Build row → Upsert to sheet
+                                └─ B: Read sheet → Filter (Status not empty) → Update status in API
+```
+
+- **Branch A** gets `GET /api/leads?status=New&pageSize=100`, adds each lead's customer (`GET /api/customers/{id}`), builds a row (Lead ID, Created in IST, Name, Email, Phone, Service, Message, Source, Synced At) and **appends or updates** it in the sheet, **matched on Lead ID**, so re-runs never duplicate rows. Values are written raw, so phone numbers like `+91 …` aren't read as formulas.
+- **Branch B** reads the sheet and, for every row with a Status, calls `PATCH /api/leads/{id}/status`.
+- **Design rule:** branch A never writes the Status column. The owner owns it; n8n only passes it on. So the two branches can't overwrite each other, whichever runs first. A blank Status means *New*.
+- Every API call has 5 retries; Google access uses a **service account** shared on the sheet (no personal login, no 7-day token expiry).
+
+![Google Sheet CRM](crm-sheet.png)
+
+**Known limits:** one page of 100 new leads per run; the sheet is the owner's working list of open leads, so a lead that is no longer *New* isn't re-added if its row is deleted; the schedule runs only while n8n is running (a hosted n8n fixes that for a real client).
+
+## 3. Error Handler
+
+![Error Handler: failed and recovered runs](error-handler.png)
+
+**Error Trigger → Alert me** (Telegram): workflow name, failing node, error message, mode and a link to the execution. Set as the *Error workflow* in the settings of Lead Intake and CRM Sync. In n8n 2.x the error workflow must be **published**, and it fires only for production runs (published workflows), not for test runs in the editor.
+
+![Telegram alerts](telegram-alerts.png)
+
+## Tested scenarios
+
+All tests used the production form URL and fake data.
+
+| # | Test | Result |
+|---|---|---|
+| 1 | Valid submission, new email | ✅ Customer + lead created, welcome email, "New lead (new customer)" alert |
+| 2 | Same email again | ✅ Same `customerId`, new `leadId`, "returning customer" alert |
+| 3 | Message under 10 characters | ✅ "Rejected form submission" alert only; no API call, no email |
+| 4 | API asleep (cold start) | ✅ *Wake up API* waits and retries, then the lead is created |
+| 5 | CRM Sync run twice | ✅ Same row count; only *Synced At* changes |
+| 6 | Status set to *Contacted* in the sheet | ✅ API shows `"status": "Contacted"`; the row keeps its status |
+| 7 | Forced failure (wrong intake URL) | ✅ "Workflow failed: Lead Intake", node *Create lead in ServiceDesk*, 404 |
+| 8 | URL restored | ✅ Normal email + alert again |
+
+## Run it yourself
 
 1. Start n8n locally from the repo root: `docker compose up -d` (n8n at http://localhost:5678; set `N8N_ENCRYPTION_KEY` in `.env` first, see `.env.example`).
-2. In n8n: **Workflows → Import from file** → `lead-intake.json`.
-3. Create two credentials (they are not included in the export):
-   - **Header Auth**: name `X-Api-Key`, value = your ServiceDesk API key → select it in *Create lead in ServiceDesk*.
-   - **SMTP**: e.g. Gmail with an app password → select it in *Welcome email*, and set your own *From* address.
-4. If you run the API locally, change the two URLs from the Render address to your local one.
-5. **Publish** the workflow and open the form's **Production URL**.
-
-### Tested scenarios
-
-| Scenario | Expected result |
-|---|---|
-| New email | New customer + lead, `isNewCustomer: true`, welcome email sent |
-| Same email again | Same `customerId`, new `leadId`, `isNewCustomer: false` |
-| Message under 10 characters | Stops at *Looks valid?*; no API call, no email |
-| API asleep (cold start) | *Wake up API* waits/retries, then the lead is created |
+2. In n8n: **Workflows → Import from file** → the three JSON files.
+3. Create the credentials (they are never included in the exports):
+   - **Header Auth**: name `X-Api-Key`, value = your ServiceDesk API key.
+   - **SMTP**: e.g. Gmail with an app password; set your own *From* address in *Welcome email*.
+   - **Telegram API**: bot token from @BotFather. Replace `YOUR_CHAT_ID` in the three Telegram nodes with your chat ID.
+   - **Google Service Account**: a service account with the Sheets and Drive APIs enabled; share your sheet with its email as Editor. Replace `YOUR_SHEET_ID` in *Upsert to sheet* and *Read sheet*.
+4. Create the sheet: tab `Leads`, row 1 = `Lead ID | Created | Name | Email | Phone | Service | Message | Source | Status | Synced At`, with a dropdown (Contacted, Qualified, Lost) on the Status column.
+5. If you run the API locally, change the Render URLs to your local one.
+6. **Publish** Error Handler first, then set it as the *Error workflow* in Lead Intake and CRM Sync (**⋯ → Settings**), and publish both. Open the form's **Production URL** to test.

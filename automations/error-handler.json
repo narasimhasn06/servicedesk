@@ -1,0 +1,67 @@
+{
+  "name": "Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "50eb2da2-467b-4cc8-8b76-a4b3fdd26aa6",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_CHAT_ID",
+        "text": "=Workflow failed: {{ $json.workflow.name }}\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nMode: {{ $json.execution.mode }}\nOpen: {{ $json.execution.url }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "3dd40a17-003c-472e-80b6-d639485bc1fd",
+      "name": "Alert me",
+      "webhookId": "b7384d6f-9e6b-43a7-8010-844883b07fe6",
+      "credentials": {
+        "telegramApi": {
+          "id": "YGKI8vFUr6DSecgp",
+          "name": "Telegram – Bright Path bot"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1a0b2308-5480-4ecc-bbad-9c457c79cd0b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"
+  },
+  "nodeGroups": [],
+  "id": "ypFBss5N4kTrS6cV",
+  "tags": []
+}
