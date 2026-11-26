@@ -11,3 +11,10 @@ public record DailyReport(
     decimal Revenue,
     decimal PendingAmount,
     int OpenLeads);
+
+    public record TopCustomer(
+    int CustomerId,
+    string Name,
+    string Email,
+    decimal Revenue,
+    int PaidBookings);

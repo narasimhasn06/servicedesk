@@ -61,4 +61,29 @@ public class ApiSecurityTests(TestApiFactory factory) : IClassFixture<TestApiFac
         var response = await client.GetAsync("/api/reports/daily?date=2099-01-01");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Top_customers_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/reports/top-customers");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Top_customers_with_invalid_days_returns_400()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", TestApiFactory.ApiKey);
+        var response = await client.GetAsync("/api/reports/top-customers?days=0");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Leads_with_customer_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/leads/with-customer");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

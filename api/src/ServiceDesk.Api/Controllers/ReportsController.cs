@@ -4,6 +4,7 @@ using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Infrastructure;
 using ServiceDesk.Api.Models;
+using Dapper;
 
 namespace ServiceDesk.Api.Controllers;
 
@@ -41,5 +42,44 @@ public class ReportsController(AppDbContext db) : ControllerBase
             Revenue: await bookings.Where(b => b.PaymentStatus == PaymentStatus.Paid).SumAsync(b => b.Amount),
             PendingAmount: await bookings.Where(b => b.PaymentStatus == PaymentStatus.Pending).SumAsync(b => b.Amount),
             OpenLeads: await db.Leads.CountAsync(l => l.Status == LeadStatus.New)));
+    }
+
+    // GET /api/reports/top-customers?days=30&limit=10
+    // Top customers by paid revenue over the last N full days (India time), today excluded.
+    // Hand-tuned SQL run with Dapper; served by IX_Bookings_PaymentStatus_StartsAt (index-only scan).
+    [HttpGet("top-customers")]
+    public async Task<ActionResult<IEnumerable<TopCustomer>>> TopCustomers(
+        [FromQuery] int days = 30, [FromQuery] int limit = 10)
+    {
+        if (days is < 1 or > 365 || limit is < 1 or > 50)
+            return Problem(statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid parameters", detail: "days must be 1–365 and limit 1–50.");
+
+        var today = IndiaTime.Today();
+        var (fromUtc, _) = IndiaTime.DayToUtcRange(today.AddDays(-days));
+        var (toUtc, _) = IndiaTime.DayToUtcRange(today);   // start of today = end of yesterday
+
+        const string sql = """
+            WITH top_paid AS (
+                SELECT "CustomerId", sum("Amount") AS revenue, count(*)::int AS paid_bookings
+                FROM "Bookings"
+                WHERE "PaymentStatus" = 'Paid'
+                  AND "StartsAt" >= @FromUtc
+                  AND "StartsAt" <  @ToUtc
+                GROUP BY "CustomerId"
+                ORDER BY revenue DESC, "CustomerId"
+                LIMIT @Limit
+            )
+            SELECT c."Id" AS "CustomerId", c."Name", c."Email",
+                   t.revenue AS "Revenue", t.paid_bookings AS "PaidBookings"
+            FROM top_paid t
+            JOIN "Customers" c ON c."Id" = t."CustomerId"
+            ORDER BY t.revenue DESC, t."CustomerId";
+            """;
+
+        var connection = db.Database.GetDbConnection();
+        var rows = await connection.QueryAsync<TopCustomer>(sql,
+            new { FromUtc = fromUtc, ToUtc = toUtc, Limit = limit });
+        return Ok(rows);
     }
 }

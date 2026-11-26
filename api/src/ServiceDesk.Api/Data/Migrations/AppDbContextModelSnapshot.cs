@@ -54,6 +54,10 @@ namespace ServiceDesk.Api.Data.Migrations
 
                     b.HasIndex("StartsAt");
 
+                    b.HasIndex("PaymentStatus", "StartsAt");
+
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("PaymentStatus", "StartsAt"), new[] { "CustomerId", "Amount" });
+
                     b.ToTable("Bookings");
                 });
 

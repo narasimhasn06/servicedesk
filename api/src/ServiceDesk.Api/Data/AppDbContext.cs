@@ -36,6 +36,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(b => b.Amount).HasPrecision(10, 2);   // money: exact decimals
             entity.Property(b => b.PaymentStatus).HasConversion<string>().HasMaxLength(20);
             entity.HasIndex(b => b.StartsAt);
+            entity.HasIndex(b => new { b.PaymentStatus, b.StartsAt })
+                  .IncludeProperties(b => new { b.CustomerId, b.Amount });
             entity.HasOne<Customer>().WithMany()
              .HasForeignKey(b => b.CustomerId)
              .OnDelete(DeleteBehavior.Restrict);

@@ -21,6 +21,27 @@ public class LeadsController(AppDbContext db, ILogger<LeadsController> logger) :
         return Ok(await query.OrderByDescending(l => l.CreatedAt).ToPagedResultAsync(page, pageSize));
     }
 
+    // GET /api/leads/with-customer?status=New
+    // Each lead with its customer in ONE database query (a JOIN), instead of
+    // 1 call for the leads + 1 call per lead for the customer (N+1).
+    [HttpGet("with-customer")]
+    public async Task<ActionResult<PagedResult<LeadWithCustomer>>> GetWithCustomer(
+        [FromQuery] LeadStatus? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var leads = db.Leads.AsNoTracking();
+        if (status is not null) leads = leads.Where(l => l.Status == status);
+
+        var query =
+            from l in leads
+            join c in db.Customers on l.CustomerId equals c.Id
+            orderby l.CreatedAt descending
+            select new LeadWithCustomer(
+                l.Id, l.CreatedAt, l.Message, l.Source, l.Status,
+                c.Id, c.Name, c.Email, c.Phone);
+
+        return Ok(await query.ToPagedResultAsync(page, pageSize));
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Lead>> GetById(int id)
     {
