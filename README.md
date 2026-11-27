@@ -25,7 +25,7 @@ payments are checked manually, and the owner has no daily overview of leads, boo
 | ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | ✅ Live |
 | n8n workflows: intake, CRM sync, alerts, daily report | [`/automations`](automations) | Workflow automation | ✅ Intake, CRM sync, alerts, daily report |
 | SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ✅ SQL tuning, Razorpay webhook |
-| AI lead triage with guardrails | [`/ai`](ai) | AI integration | ⏳ Days 11–12 |
+| AI lead triage with guardrails | [`/ai`](ai) | AI integration | ✅ Triage · ⏳ Guardrails (Day 12) |
 
 ## Architecture
 
@@ -60,6 +60,8 @@ Requirements: .NET 10 SDK, Docker Desktop.
 7. Optional, for payments: set Razorpay **test** keys and your webhook secret as user-secrets
    (`Razorpay:KeyId`, `Razorpay:KeySecret`, `Razorpay:WebhookSecret`). Test webhooks locally with
    `tools/send-razorpay-test-webhook.ps1`.
+8. Optional, for AI triage: set a Gemini API key with `dotnet user-secrets set "Ai:ApiKey" "<key>"`
+   (endpoint, model and services are in `appsettings.json`).
 
 ## Case studies
 
@@ -70,7 +72,7 @@ Requirements: .NET 10 SDK, Docker Desktop.
 
 ## Status
 
-🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) and Razorpay payments (signed, idempotent webhook) are done; AI triage follows.
+🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) and Razorpay payments (signed, idempotent webhook) are done; AI lead triage is live ([details](ai/README.md)); AI guardrails and evaluation follow.
 
 ---
 
