@@ -24,7 +24,7 @@ payments are checked manually, and the owner has no daily overview of leads, boo
 |---|---|---|---|
 | ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | ✅ Live |
 | n8n workflows: intake, CRM sync, alerts, daily report | [`/automations`](automations) | Workflow automation | ✅ Intake, CRM sync, alerts, daily report |
-| SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ✅ SQL tuning · ⏳ Razorpay (Day 10) |
+| SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ✅ SQL tuning, Razorpay webhook |
 | AI lead triage with guardrails | [`/ai`](ai) | AI integration | ⏳ Days 11–12 |
 
 ## Architecture
@@ -57,16 +57,20 @@ Requirements: .NET 10 SDK, Docker Desktop.
    `dotnet user-secrets set "ConnectionStrings:ServiceDesk" "Host=localhost;Port=5432;Database=servicedesk;Username=servicedesk;Password=<your-password>" --project api/src/ServiceDesk.Api`
 5. Run: `dotnet run --project api/src/ServiceDesk.Api --launch-profile https`
 6. Open `https://localhost:7086/scalar` — migrations and sample data are applied automatically in Development.
+7. Optional, for payments: set Razorpay **test** keys and your webhook secret as user-secrets
+   (`Razorpay:KeyId`, `Razorpay:KeySecret`, `Razorpay:WebhookSecret`). Test webhooks locally with
+   `tools/send-razorpay-test-webhook.ps1`.
 
 ## Case studies
 
 - [ServiceDesk API — a documented, tested backend, live with Docker](docs/case-studies/01-servicedesk-api.md)
 - [Automated lead handling — from form to CRM, owner alerts and a daily report, with no copy-paste](docs/case-studies/02-lead-automation.md)
 - [SQL performance — a dashboard query on 1M bookings: 5× faster, 44× less data read](sql/README.md)
+- [Razorpay payments that can't be faked or counted twice](docs/case-studies/03-payment-webhook.md)
 
 ## Status
 
-🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) is done; the payment webhook and AI triage follow.
+🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) and Razorpay payments (signed, idempotent webhook) are done; AI triage follows.
 
 ---
 
