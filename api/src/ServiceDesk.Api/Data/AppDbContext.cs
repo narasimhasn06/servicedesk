@@ -30,6 +30,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne<Customer>().WithMany()
              .HasForeignKey(l => l.CustomerId)
              .OnDelete(DeleteBehavior.Restrict);            // can't orphan a lead
+            entity.Property(l => l.AiPriority).HasMaxLength(10);
+            entity.Property(l => l.AiService).HasMaxLength(100);
+            entity.Property(l => l.AiSummary).HasMaxLength(500);
+            entity.Property(l => l.AiDraftReply).HasMaxLength(2000);
+            entity.Property(l => l.AiStatus).HasConversion<string>().HasMaxLength(20);   // "Done", not 0
         });
 
         modelBuilder.Entity<Booking>(entity =>

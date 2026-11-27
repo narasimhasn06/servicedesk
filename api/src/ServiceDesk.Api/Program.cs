@@ -7,6 +7,10 @@ using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Infrastructure;
 using Microsoft.Extensions.Options;
 using ServiceDesk.Api.Payments;
+using System.ClientModel;
+using Microsoft.Extensions.AI;
+using OpenAI;
+using ServiceDesk.Api.Ai;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +49,21 @@ builder.Services.AddHttpClient<RazorpayClient>((sp, http) =>
     http.BaseAddress = new Uri(sp.GetRequiredService<IOptions<RazorpayOptions>>().Value.BaseUrl);
     http.Timeout = TimeSpan.FromSeconds(15);
 });
+
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
+builder.Services.AddChatClient(sp =>
+{
+    var ai = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+    var key = string.IsNullOrWhiteSpace(ai.ApiKey) ? "not-configured" : ai.ApiKey;
+    return new OpenAIClient(new ApiKeyCredential(key), new OpenAIClientOptions
+        {
+            Endpoint = new Uri(ai.Endpoint),            // Gemini's OpenAI-compatible endpoint
+            NetworkTimeout = TimeSpan.FromSeconds(30)
+        })
+        .GetChatClient(ai.Model)
+        .AsIChatClient();                               // the provider-neutral interface
+});
+builder.Services.AddScoped<LeadTriageService>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 

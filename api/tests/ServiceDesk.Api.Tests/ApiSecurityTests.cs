@@ -120,4 +120,12 @@ public class ApiSecurityTests(TestApiFactory factory) : IClassFixture<TestApiFac
             new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Triage_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.PostAsync("/api/leads/1/triage", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
