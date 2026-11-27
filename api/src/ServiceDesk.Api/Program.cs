@@ -64,6 +64,7 @@ builder.Services.AddChatClient(sp =>
         .AsIChatClient();                               // the provider-neutral interface
 });
 builder.Services.AddScoped<LeadTriageService>();
+builder.Services.AddScoped<IAiUsageRecorder, EfAiUsageRecorder>();
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 

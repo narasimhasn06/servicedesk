@@ -128,4 +128,21 @@ public class ApiSecurityTests(TestApiFactory factory) : IClassFixture<TestApiFac
         var response = await client.PostAsync("/api/leads/1/triage", null);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Ai_usage_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/ai/usage");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Triage_preview_without_api_key_returns_401()
+    {
+        var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/ai/triage-preview", new { message = "hi" });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
 }

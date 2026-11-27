@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<WebhookEvent> WebhookEvents => Set<WebhookEvent>();
+    public DbSet<AiCall> AiCalls => Set<AiCall>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -58,6 +59,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(e => e.EventId);                        // duplicate event id = insert fails
             entity.Property(e => e.EventId).HasMaxLength(100);
             entity.Property(e => e.EventType).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<AiCall>(entity =>
+        {
+            entity.Property(c => c.Model).HasMaxLength(100);
+            entity.Property(c => c.PromptVersion).HasMaxLength(10);
+            entity.Property(c => c.Outcome).HasMaxLength(20);
+            entity.HasIndex(c => c.CreatedAt);                    // usage report filters by date
         });
     }
 }

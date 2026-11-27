@@ -4,7 +4,6 @@ using ServiceDesk.Api.Contracts;
 using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Infrastructure;
 using ServiceDesk.Api.Models;
-using System.ClientModel;
 using ServiceDesk.Api.Ai;
 
 namespace ServiceDesk.Api.Controllers;
@@ -134,28 +133,18 @@ public class LeadsController(AppDbContext db, ILogger<LeadsController> logger, L
             new LeadIntakeResponse(lead.Id, customer.Id, isNewCustomer));
     }
 
-    // POST /api/leads/5/triage — the AI reads ONLY the message and suggests priority, service,
-    // a summary and a draft reply. Saved on the lead; a person decides what to do with it.
+    // POST /api/leads/5/triage — the AI reads ONLY the (masked) message and suggests priority, service,
+    // a summary and a draft reply. Always 200: Done, or NeedsHumanReview if the AI couldn't be trusted.
     [HttpPost("{id:int}/triage")]
     public async Task<ActionResult<LeadTriageResponse>> Triage(int id, CancellationToken ct)
     {
         var lead = await db.Leads.FirstOrDefaultAsync(l => l.Id == id, ct);
         if (lead is null) return NotFound();
 
-        TriageOutcome outcome;
-        try
-        {
-            outcome = await triage.TriageAsync(lead.Message, ct);
-        }
-        catch (Exception ex) when (ex is ClientResultException or HttpRequestException or TaskCanceledException)
-        {
-            logger.LogWarning("AI triage call failed for lead {LeadId}: {Error}", id, ex.Message);
-            return Problem(statusCode: StatusCodes.Status502BadGateway, title: "AI provider error",
-                detail: "The AI service didn't answer. Try again shortly.");
-        }
+        var outcome = await triage.TriageAsync(lead.Message, lead.Id, ct);
 
         var r = outcome.Result;
-        lead.AiStatus = outcome.Succeeded ? AiTriageStatus.Done : AiTriageStatus.Failed;
+        lead.AiStatus = outcome.Status;
         lead.AiPriority = r?.Priority;
         lead.AiService = r?.Service;
         lead.AiSummary = r?.Summary;
@@ -163,10 +152,11 @@ public class LeadsController(AppDbContext db, ILogger<LeadsController> logger, L
         lead.AiTriagedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
-        logger.LogInformation("AI triage for lead {LeadId}: {Status} {Priority} in {Ms} ms",
-            id, lead.AiStatus, lead.AiPriority, outcome.DurationMs);
+        logger.LogInformation(
+            "AI triage for lead {LeadId}: {Status} {Priority} after {Attempts} attempt(s) in {Ms} ms; masked {Emails} email(s), {Phones} phone(s)",
+            id, outcome.Status, r?.Priority, outcome.Attempts, outcome.DurationMs, outcome.EmailsMasked, outcome.PhonesMasked);
 
-        return Ok(new LeadTriageResponse(lead.Id, lead.AiStatus.Value, lead.AiPriority, lead.AiService,
-            lead.AiSummary, lead.AiDraftReply, outcome.Error));
+        return Ok(new LeadTriageResponse(lead.Id, outcome.Status, r?.Priority, r?.Service,
+            r?.Summary, r?.DraftReply, outcome.Error));
     }
 }

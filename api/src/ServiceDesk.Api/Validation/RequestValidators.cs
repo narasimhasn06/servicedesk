@@ -79,3 +79,8 @@ public class LeadIntakeRequestValidator : AbstractValidator<LeadIntakeRequest>
         RuleFor(x => x.Source).MaximumLength(50);
     }
 }
+
+public class TriagePreviewRequestValidator : AbstractValidator<TriagePreviewRequest>
+{
+    public TriagePreviewRequestValidator() => RuleFor(x => x.Message).NotEmpty().MaximumLength(2000);
+}
