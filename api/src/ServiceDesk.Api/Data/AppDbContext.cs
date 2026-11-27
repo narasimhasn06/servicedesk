@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<WebhookEvent> WebhookEvents => Set<WebhookEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +42,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne<Customer>().WithMany()
              .HasForeignKey(b => b.CustomerId)
              .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(b => b.PaymentLinkId).HasMaxLength(50);
+            entity.Property(b => b.PaymentLinkUrl).HasMaxLength(200);
+            entity.Property(b => b.PaymentId).HasMaxLength(50);
+            entity.HasIndex(b => b.PaymentLinkId).IsUnique();     // the webhook finds the booking by link id
+        });
+
+        modelBuilder.Entity<WebhookEvent>(entity =>
+        {
+            entity.HasKey(e => e.EventId);                        // duplicate event id = insert fails
+            entity.Property(e => e.EventId).HasMaxLength(100);
+            entity.Property(e => e.EventType).HasMaxLength(100);
         });
     }
 }

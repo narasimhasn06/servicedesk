@@ -40,6 +40,21 @@ namespace ServiceDesk.Api.Data.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("PaymentLinkId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("PaymentLinkUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -51,6 +66,9 @@ namespace ServiceDesk.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("PaymentLinkId")
+                        .IsUnique();
 
                     b.HasIndex("StartsAt");
 
@@ -132,6 +150,25 @@ namespace ServiceDesk.Api.Data.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("Leads");
+                });
+
+            modelBuilder.Entity("ServiceDesk.Api.Models.WebhookEvent", b =>
+                {
+                    b.Property<string>("EventId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("WebhookEvents");
                 });
 
             modelBuilder.Entity("ServiceDesk.Api.Models.Booking", b =>

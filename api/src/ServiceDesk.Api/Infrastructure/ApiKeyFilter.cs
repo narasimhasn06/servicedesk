@@ -13,6 +13,10 @@ public class ApiKeyFilter(IConfiguration configuration) : IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         var expected = configuration["ApiKey"];
+
+        if (context.ActionDescriptor.EndpointMetadata.OfType<SkipApiKeyAttribute>().Any())
+            return;   // this endpoint authenticates callers itself
+            
         if (string.IsNullOrWhiteSpace(expected))
         {
             context.Result = new ObjectResult(new ProblemDetails

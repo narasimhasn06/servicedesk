@@ -5,6 +5,8 @@ using Scalar.AspNetCore;
 using Serilog;
 using ServiceDesk.Api.Data;
 using ServiceDesk.Api.Infrastructure;
+using Microsoft.Extensions.Options;
+using ServiceDesk.Api.Payments;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +38,13 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("ServiceDesk")));
+
+builder.Services.Configure<RazorpayOptions>(builder.Configuration.GetSection("Razorpay"));
+builder.Services.AddHttpClient<RazorpayClient>((sp, http) =>
+{
+    http.BaseAddress = new Uri(sp.GetRequiredService<IOptions<RazorpayOptions>>().Value.BaseUrl);
+    http.Timeout = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
 
