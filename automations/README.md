@@ -6,7 +6,7 @@ Four n8n workflows connect the website form, the ServiceDesk API, a Google Sheet
 
 | Workflow | File | What it does | Status |
 |---|---|---|---|
-| Lead Intake | [`lead-intake.json`](lead-intake.json) | Website form → validated lead in the API → welcome email + Telegram alert | ✅ Done |
+| Lead Intake | [`lead-intake.json`](lead-intake.json) | Website form → validated lead in the API → welcome email + AI triage → Telegram alert (🔥 for hot leads) | ✅ Done |
 | CRM Sync | [`crm-sync.json`](crm-sync.json) | Every 15 min: new leads → Google Sheet (no duplicates); owner's status changes → API | ✅ Done |
 | Error Handler | [`error-handler.json`](error-handler.json) | Telegram alert when any workflow fails | ✅ Done |
 | Daily Report | [`daily-report.json`](daily-report.json) | Every day 8 AM (IST): yesterday's leads, bookings and revenue → owner email + *Reports* tab | ✅ Done |
@@ -45,7 +45,10 @@ flowchart LR
    - **false → Alert rejected** (Telegram): "Rejected form submission (not saved)". Nothing reaches the API.
 4. **Wake up API** (HTTP GET `/health`): wakes the free-plan Render service (cold start up to ~1 minute); 60 s timeout, 5 retries, continues on error.
 5. **Create lead in ServiceDesk** (HTTP POST `/api/leads/intake`, `X-Api-Key` header auth): finds or creates the customer by email and creates the lead in one transaction; 5 retries. Returns `leadId`, `customerId`, `isNewCustomer`.
-6. **Welcome email** (SMTP) and **Alert owner** (Telegram, "New lead #… (new / returning customer)") run side by side. Telegram nodes continue on error, so a chat hiccup never fails a saved lead.
+6. **Welcome email** (SMTP) goes out straight away. In parallel, **AI triage** (HTTP POST `/api/leads/{leadId}/triage`, 60 s timeout, continues on error) asks the API for the AI's priority, service and summary ([details](../ai/README.md)).
+7. **Alert owner** (Telegram) then reports the lead: "🔥 HOT lead #…" for hot leads, otherwise "New lead #…", plus `AI: priority · service` and the one-line summary. If the AI needed human review the alert says so; if the API couldn't be reached it says "AI: not available". The owner gets every lead either way. Telegram nodes continue on error, so a chat hiccup never fails a saved lead.
+
+![Hot-lead alert](../docs/case-studies/04-hot-lead-alert.png)
 
 ## 2. CRM Sync
 

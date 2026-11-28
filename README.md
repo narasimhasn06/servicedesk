@@ -25,7 +25,7 @@ payments are checked manually, and the owner has no daily overview of leads, boo
 | ASP.NET Core Web API + PostgreSQL | [`/api`](api) | .NET development | ✅ Live |
 | n8n workflows: intake, CRM sync, alerts, daily report | [`/automations`](automations) | Workflow automation | ✅ Intake, CRM sync, alerts, daily report |
 | SQL tuning + Razorpay webhook integration | [`/sql`](sql) | Database & API work | ✅ SQL tuning, Razorpay webhook |
-| AI lead triage with guardrails | [`/ai`](ai) | AI integration | ✅ Triage · ⏳ Guardrails (Day 12) |
+| AI lead triage with guardrails | [`/ai`](ai) | AI integration | ✅ Triage, guardrails, evaluation |
 
 ## Architecture
 
@@ -69,10 +69,11 @@ Requirements: .NET 10 SDK, Docker Desktop.
 - [Automated lead handling — from form to CRM, owner alerts and a daily report, with no copy-paste](docs/case-studies/02-lead-automation.md)
 - [SQL performance — a dashboard query on 1M bookings: 5× faster, 44× less data read](sql/README.md)
 - [Razorpay payments that can't be faked or counted twice](docs/case-studies/03-payment-webhook.md)
+- [AI lead triage a small business can trust](docs/case-studies/04-ai-lead-triage.md)
 
 ## Status
 
-🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) and Razorpay payments (signed, idempotent webhook) are done; AI lead triage is live ([details](ai/README.md)); AI guardrails and evaluation follow.
+🚧 Being built in public over 15 days (started November 2026). The API layer is live; n8n lead intake, Google Sheets CRM sync, Telegram alerts, error handling and the 8 AM daily report are done; SQL tuning (covering index, Dapper report, N+1 fix) and Razorpay payments (signed, idempotent webhook) are done; AI lead triage with masking, human-review fallback and a measured evaluation is live ([details](ai/README.md)). Next: the portfolio page and launch.
 
 ---
 

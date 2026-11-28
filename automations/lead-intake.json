@@ -165,8 +165,8 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        960,
-        208
+        1136,
+        -16
       ],
       "id": "0d9469c0-9b2a-456e-b98c-4d94bcce92f7",
       "name": "Welcome email",
@@ -259,7 +259,7 @@
     {
       "parameters": {
         "chatId": "YOUR_CHAT_ID",
-        "text": "=New lead #{{ $('Create lead in ServiceDesk').item.json.leadId }} ({{ $('Create lead in ServiceDesk').item.json.isNewCustomer ? 'new customer' : 'returning customer' }})\nName: {{ $('Prepare lead').item.json.name }}\nEmail: {{ $('Prepare lead').item.json.email }}\nService: {{ $('On form submission').item.json.Service }}\nMessage: {{ $('On form submission').item.json.Message.slice(0, 200) }}",
+        "text": "={{ $json.priority === 'hot' ? '🔥 HOT lead' : 'New lead' }} #{{ $('Create lead in ServiceDesk').item.json.leadId }} ({{ $('Create lead in ServiceDesk').item.json.isNewCustomer ? 'new customer' : 'returning customer' }})\nAI: {{ $json.status === 'Done' ? $json.priority + ' · ' + $json.service : ($json.status === 'NeedsHumanReview' ? 'needs your review' : 'not available') }}\nSummary: {{ $json.summary || '-' }}\nName: {{ $('Prepare lead').item.json.name }}\nEmail: {{ $('Prepare lead').item.json.email }}\nService: {{ $('On form submission').item.json.Service }}\nMessage: {{ $('On form submission').item.json.Message.slice(0, 200) }}",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -267,8 +267,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        -240
+        1248,
+        -256
       ],
       "id": "807126b4-7784-431e-a005-f5bf435eb623",
       "name": "Alert owner",
@@ -302,6 +302,35 @@
         "telegramApi": {
           "id": "YGKI8vFUr6DSecgp",
           "name": "Telegram – Bright Path bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://servicedesk-api-tpzr.onrender.com/api/leads/{{ $('Create lead in ServiceDesk').item.json.leadId }}/triage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1088,
+        -224
+      ],
+      "id": "0d906cc1-0ba7-4fb1-b6dc-6dab451da2db",
+      "name": "AI triage",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "maxTries": 2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "k25trGEQp07u1caZ",
+          "name": "ServiceDesk API (production)"
         }
       },
       "onError": "continueRegularOutput"
@@ -364,10 +393,21 @@
       "main": [
         [
           {
-            "node": "Welcome email",
+            "node": "AI triage",
             "type": "main",
             "index": 0
           },
+          {
+            "node": "Welcome email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI triage": {
+      "main": [
+        [
           {
             "node": "Alert owner",
             "type": "main",
@@ -386,7 +426,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "32b8bbf9-bcb8-44fc-8607-740ecb7df2a1",
+  "versionId": "0bfac85f-b688-4d7e-a0e5-1d71e5f1944e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8fe5bd865bb65e130f990978101c38aba377ea55fb243e608ddf0c33228a90c9"

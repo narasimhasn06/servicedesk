@@ -80,11 +80,22 @@ Response time per lead: about **1.5–4 seconds**, occasionally up to 12 s (free
   client's request (12) maps to "Other" because it names no service. Both are reasonable; a real client
   would decide whether to add a service.
 
-## Limits (and what Day 12 adds)
+## Guardrails added on Day 12
 
-- Personal details typed *inside* a message would still reach the model → Day 12 masks emails and
-  phone numbers first.
-- One attempt, no fallback → Day 12 adds a retry, a short timeout and "needs human review".
-- **Free tier:** the provider may use free-tier requests to improve its products, so only demo data is
-  sent. A real client gets a paid tier with a data-processing agreement.
-- No accuracy number yet → Day 12 adds a 20-lead evaluation set.
+| Day 11 limit | Day 12 answer |
+|---|---|
+| Contact details typed inside a message reached the model | Emails and 10+ digit numbers are masked to `[email]` / `[phone]` before the prompt is built ([`PiiMasker`](../api/src/ServiceDesk.Api/Ai/PiiMasker.cs)) |
+| One attempt, provider errors returned 502 | Up to two attempts, 15 s timeout each; still failing → **NeedsHumanReview**, always 200, so automations never break |
+| No accuracy number | 20 hand-labelled enquiries in [`eval/`](eval): priority **19/20 (v1) → 20/20 (v2)**, service 20/20 |
+| Too many leads marked hot; polite replies to spam | Prompt v2 defines hot as *asks to book, pay or start, or names a time*; spam gets no draft reply |
+| Nothing measured | Every attempt stored in `AiCalls`; `GET /api/ai/usage` reports outcomes, tokens, average and p95 time |
+| Triage had to be called by hand | n8n Lead Intake triages every new lead; the owner's alert shows 🔥 for hot leads plus the AI summary |
+
+Measured on the free tier (prompt v2): successful answers average **2.8 s**, 95% within **9.6 s**, slowest 11.7 s;
+about one in four calls stalled and was rescued by the retry or sent to human review.
+
+**Free tier:** the provider may use free-tier requests to improve its products, so only fictional data is
+sent. A real client gets a paid tier with a data-processing agreement.
+
+What goes in, what never does, and what happens on failure: [`DATA-ACCESS-SPEC.md`](DATA-ACCESS-SPEC.md).
+Case study: [AI lead triage a small business can trust](../docs/case-studies/04-ai-lead-triage.md).
